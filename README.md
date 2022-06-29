@@ -1,12 +1,17 @@
-# AlgorithmNote
+# 目录 <!-- omit in toc -->
+- 前言
+- 数组
+  - 前缀和
+
+# 前言
 
 算法学习的记录
 
 感谢 [Labuladong](https://github.com/labuladong/fucking-algorithm) 、[Carl](https://github.com/youngyangyang04/leetcode-master) 等大佬免费的学习资料
 
-## 数组
+# 数组
 
-### 前缀和
+## 前缀和
 
 **前缀和技巧适用于快速、频繁地计算一个索引区间内的元素之和。**
 
