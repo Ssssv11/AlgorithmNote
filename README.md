@@ -2,30 +2,125 @@
 
 - [前言](#前言)
 - [数组](#数组)
-  - [前缀和](#前缀和)
+  - [前缀和、前缀积](#前缀和前缀积)
+  - [差分数组](#差分数组)
 <br>
 
 # 前言
 
-算法学习的记录
+算法学习的记录，LeetCode 刷题中...
 
 感谢 [Labuladong](https://github.com/labuladong/fucking-algorithm) 、[Carl](https://github.com/youngyangyang04/leetcode-master) 等大佬免费的学习资料
 <br>
 
 # 数组
 
-## 前缀和
+## 前缀和、前缀积
 
-**前缀和技巧适用于快速、频繁地计算一个索引区间内的元素之和。**
+**前缀和技巧适用于快速、频繁地计算一个索引区间内的元素之和，它不会修改原始数组。**
+核⼼思路是创建⼀个数组 `preSum`， `preSum[i]` 记录 `nums[0..i-1]` 的累加和。若需要计算某个索引区间 [i, j] 内的元素之和，只需要计算 `preSum[j+1] - preSum[i]` 的值即可。
 <br>
 
 - [303.区域和检索-数组不可变](Array/303.区域和检索-数组不可变.java)
 - [304.二维区域和检索-矩阵不可变](Array/304.二维区域和检索-矩阵不可变.java)
 
 这两道基础题分别从一维和二维层面运用前缀和来解决问题。主要需要弄清楚该计算从哪儿到哪儿的和以及其中任意索引区间内等元素之和该如何表示。
+若使用前缀和(积)方法且前缀和(积)数组为了方便计算而置为0(或1)，则需要时刻注意其起始索引为 1。
 <br>
 
 - [238.除自身以外数组的乘积](Array/238.除自身以外数组的乘积.java)
 - [1352.最后-k-个数的乘积](Array/1352.最后-k-个数的乘积.java)
 
-与前缀和思想相似，这两道求积的问题也可以先求前缀积再根据具体情况考虑特殊之处。
+与前缀和思想相似，这两道求积的问题也可以通过先求前缀积再根据具体情况考虑特殊之处。如 #238 可以使用 *前缀积+后缀积* 的方式来实现不使用除法解答；#1352 需要在插入 0 后清空当前前缀积重新开始计算。
+<br>
+
+## 差分数组
+
+**差分数组的主要适⽤场景是频繁对原始数组的某个区间的元素进⾏增减。**
+如需要对数组 `nums[i..j]` 全部加 1，再给 `nums[k..l]` 全部减 2...最后返回增减后的数组。常规思路就是使用 for 循环对指定区间进行加减，但这样对 `nums` 的修改非常频繁且效率低下，时间复杂度为 O(N)。
+使用差分数组与前缀和构造的 `preSum` 数组相似，可以为 `nums` 数组构造⼀个差分数组 `diff`， `diff[i]` 就是 `nums[i]` 和 `nums[i-1`] 之差：
+```java
+// nums[] = {5, 7, 9, 2, 3}
+// diff[] = {5, 2, 2, -7, 1}
+int[] diff = new int[nums.length];
+// 构造差分数组
+diff[0] = nums[0];
+for (int i = 1; i < nums.length; i++) {
+    diff[i] = nums[i] - nums[i - 1];
+}
+```
+这样，若需要通过 `diff` 数组还原为原始数组 `nums` 只需要:
+```java
+int[] res = new int[diff.length];
+// 根据差分数组构造结果数组
+res[0] = diff[0];
+for (int i = 1; i < diff.length; i++) {
+    res[i] = res[i - 1] + diff[i];
+}
+```
+通过构造差分数组 `diff` 就可以快速地对区间进行增减操作。如果需要对区间 `nums[i..j]` 的元素全部加 2，那么只需要让 `diff[i] += 2`，然后再让 `diff[j+1] -= 2` 即可。
+```java
+// nums[] = {5, 9, 11, 4, 3}
+// diff[] = {5, 4, 2, -7, -1}
+                i      j
+```
+这是因为 `diff[i] += 2` 后就相当于为 `nums[i..]` 的所有元素都进行了加 2 操作，`diff[j+1] -= 2` 就相当于为 `nums[j+1..]` 的所有元素进行了减 2 操作，因此这样就只对区间 `nums[i..j]` 进行了加 2 操作。
+只需要花费 O(1) 的时间修改 `diff` 数组，就相当于给 `nums` 的整个区间做了修改。多次修改 `diff` 后再通过计算就可以得到 `nums` 修改后的结果。
+
+---
+考虑到差分数组代码的复用性，可以将其抽象为一个类：
+```java
+class Diff {
+    private int[] diff;
+
+    /**
+     * create the diff array
+     * @param nums
+     */
+    public Diff(int[] nums) {
+        assert nums.length > 0;
+        diff = new int[nums.length];
+        diff[0] = nums[0];
+        for (int i = 1; i < nums.length; i++) {
+            diff[i] = nums[i] - nums[i - 1];
+        }
+    }
+
+    /**
+     * 
+     * @param i
+     * @param j
+     * @param val
+     */
+    public void calc(int i, int j, int val) {
+        diff[i] += val;
+        // 若 j+1 < diff.length 则表示修改是从 i 到最后
+        if(j + 1 < diff.length) {
+            diff[j + 1] -= val;
+        }
+    }
+
+    /**
+     * 
+     * @return the result of the origin array by diff[]
+     */
+    public int[] result() {
+        int res[] = new int[diff.length];
+        res[0] = diff[0];
+        for (int i = 1; i < diff.length; i++) {
+            res[i] = res[i - 1] + diff[i];
+        }
+        return res;
+    }
+}
+```
+</br>
+
+- [370.区间加法](Array/370.区间加法.java)
+
+- [1109.航班预订统计](Array/1109.航班预订统计.java)
+
+- [1094.拼车](Array/1094.拼车.java)
+
+这三道题都是典型的需要使用差分数组进行解答的题目，可以抽象出一个 `Diff` 差分数组工具类来提升代码的复用性。需要注意在初始化 `nums[]` 时其长度的选择：进行增减操作次数的最大值。
+

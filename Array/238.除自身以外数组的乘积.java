@@ -9,7 +9,7 @@ package Array;
 // @lc code=start
 /*
  * 前缀和问题思想
- * 此处不允许使用除法，因此采用前缀积于后缀积实现
+ * 此处不允许使用除法，因此采用前缀积与后缀积实现
  */
 class Solution {
     public int[] productExceptSelf(int[] nums) {
