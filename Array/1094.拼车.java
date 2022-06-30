@@ -20,9 +20,9 @@ class Solution {
         int[] nums = new int[1001];
         Diff diff = new Diff(nums);
         for (int[] trip : trips) {
-            diff.calc(trip[1] - 1, trip[2] - 1, trip[0]);
+            diff.calc(trip[1], trip[2] - 1, trip[0]);
         }
-        return !Arrays.stream(diff.result()).anyMatch(x -> x > capacity);
+        return Arrays.stream(diff.result()).noneMatch(x -> x > capacity);
     }
 }
 
