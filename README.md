@@ -17,6 +17,10 @@
     - [左右指针](#左右指针)
   - [二维数组的遍历问题](#二维数组的遍历问题)
   - [滑动窗口](#滑动窗口)
+  - [二分查找](#二分查找)
+    - [查找一个数](#查找一个数)
+    - [寻找边界的二分搜索](#寻找边界的二分搜索)
+    - [二分查找问题的泛化](#二分查找问题的泛化)
 
 </br>
 
@@ -32,7 +36,7 @@
 - [303.区域和检索-数组不可变](Array/303.区域和检索-数组不可变.java) &emsp;[🔗](https://leetcode.cn/problems/range-sum-query-immutable/)
 - [304.二维区域和检索-矩阵不可变](Array/304.二维区域和检索-矩阵不可变.java) &emsp;[🔗](https://leetcode.cn/problems/range-sum-query-2d-immutable/)
 
-> 具体理解在代码内注释
+> 具体解释见代码内注释
 
 这两道基础题分别从一维和二维层面运用前缀和来解决问题。主要需要弄清楚该计算从哪儿到哪儿的和以及其中任意索引区间内的元素之和该如何表示。
 若使用前缀和(积)方法且前缀和(积)数组为了方便计算而将首位置为0(或1)，则需要时刻注意其起始索引为 1。
@@ -233,7 +237,7 @@ void String slidingWindow(String s) {
 }
 ```
 
-其中两处 ... 表示的更新窗口数据的地方
+其中两处 `...` 表示的更新窗口数据的地方
 
 </br>
 
@@ -252,3 +256,137 @@ void String slidingWindow(String s) {
 
 </br>
 
+## 二分查找
+
+二分查找也称折半查找（Binary Search），它是一种效率较高的查找方法。但是，折半查找要求线性表必须采用顺序存储结构，而且表中元素按关键字有序排列。
+
+---
+二分查找代码框架（**在有序数组中搜索指定元素**）：
+```java
+int binarySearch(int[] nums, int target) {
+    int left = 0, right = ...;
+    while(...) {
+        int mid = left + (right - left) / 2;
+        if(nums[mid] == target) {
+            ...
+        } else if(nums[mid] < target) {
+            left = ...
+        } else {
+            right = ...
+        }
+    }
+    return ...;
+}
+```
+
+分析二分查找的一个技巧是：不要出现 `else`，而是把所有情况用 `else if` 写清楚，这样可以清楚地展现所有细节。
+
+其中 `...` 标记的部分，就是可能出现细节问题的地方，当见到一个二分查找的代码时，首先注意这几个地方。
+
+**计算 `mid` 时需要防止溢出，代码中 `left + (right - left) / 2` 与 `(left + right) / 2` 等价，但是有效防止了 `left` 和 `right` 太大，直接相加导致溢出的情况。**
+
+<br>
+
+### 查找一个数
+
+二分查找最普通的用法，即搜索一个数，如果存在，返回其索引，否则返回 -1。
+
+- [704.二分查找](Array/704.二分查找.java) &emsp;[🔗](https://leetcode.cn/problems/binary-search/)
+
+代码中的细节：
+
+1. 为什么 while 循环的条件中是 <=，而不是 < ？
+
+因为初始化 `right` 时赋值为 `nums.length - 1`，即最后一个元素的索引，而不是 `nums.length`。
+
+这二者可能出现在不同功能的二分查找中，区别是：前者相当于两端都闭区间 `[left, right]`，后者相当于左闭右开区间 [`left, right)`（索引大小为 `nums.length` 越界）。
+
+这里使用的是前者 `[left, right]` 闭区间。这个区间就是每次进行搜索的区间。
+
+而 `while(left <= right)` 的终止条件是 `left == right + 1`，即 `[right + 1, right]`，这时区间为空。所以 while 循环终止是正确的，直接返回 -1。
+
+`while(left < right)` 的终止条件是 `left == right`，即 `[right, right]`，区间中还有 right，但此时 while 循环终止了。也就是说此时区间中索引 right 没有被搜索，如果这时候直接返回 -1 就是错误的。
+
+若需使用 `while(left < right)`，也可以在返回时再次搜索 right 处值：
+
+```java
+...
+while(left < right) {
+  ...
+}
+return nums[left] == target ? left : -1;
+```
+
+2. 为什么 `left = mid + 1`，`right = mid - 1` ？
+
+当查到 mid > target 时，说明 target 在 mid 右边，所以 `left = mid + 1`，即搜索右半部分。同理，当查到 mid < target 时，说明 target 在 mid 左边，所以 `right = mid - 1`，即搜索左半部分。
+
+3. 此算法的缺陷 ？
+
+如有序数组 nums = [1,2,2,2,3]，target 为 2，此算法返回的索引为 2。但如果想得到 target 的左侧边界，即索引 1，或者 target 的右侧边界，即索引 3 的话此算法是无法处理的。
+
+但是如果当找到一个 target，然后向左或向右线性搜索又难以保证二分查找对数级的复杂度。
+
+</br>
+
+### 寻找边界的二分搜索
+
+对普通二分查找算法稍加改动就可以实现寻找边界的二分查找。重点是在查找到 target 时并不马上返回，而是继续缩小范围继续查找左边或右边是否还有 target。
+
+- [34.在排序数组中查找元素的第一个和最后一个位置](Array/34.在排序数组中查找元素的第一个和最后一个位置.java) &emsp;[🔗](https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/)
+
+**二分思维的精髓就是：通过已知信息尽可能多地收缩（折半）搜索空间，从而增加穷举效率，快速找到目标。**
+
+</br>
+
+### 二分查找问题的泛化
+
+什么问题可以运用二分搜索算法技巧？
+
+首先要从题目中抽象出一个自变量 `x`，一个关于 `x` 的函数 `f(x)`，以及一个目标值 `target`。
+
+同时，`x`, `f(x)`, `target` 还要满足以下条件：
+
+1. `f(x)` 必须是在 `x` 上的单调函数。
+
+2. 题目要求计算满足约束条件 `f(x) == target` 时的 `x` 的值。
+
+---
+二分查找代码框架：
+```java
+// 函数 f 是关于自变量 x 的单调函数
+int f(int x) {
+    // ...
+}
+
+// 主函数，在 f(x) == target 的约束下求 x 的最值
+int solution(int[] nums, int target) {
+    if (nums.length == 0) return -1;
+    int left = ...;
+    int right = ... + 1;
+    
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (f(mid) == target) {
+            ...
+        } else if (f(mid) < target) {
+            ...
+        } else if (f(mid) > target) {
+            ...
+        }
+    }
+    return left;
+}
+```
+
+其中 `...` 根据具体业务编写代码。
+
+- [875.爱吃香蕉的珂珂](Array/875.爱吃香蕉的珂珂.java) &emsp;[🔗](https://leetcode.cn/problems/koko-eating-bananas/)
+
+- [410.分割数组的最大值](Array/410.分割数组的最大值.java) &emsp;[🔗](https://leetcode.cn/problems/split-array-largest-sum/)
+
+- [1011.在D天内送达包裹的能力](Array/1011.在D天内送达包裹的能力.java) &emsp;[🔗](https://leetcode.cn/problems/capacity-to-ship-packages-within-d-days/)
+
+最重要的是从题目中抽象出满足使用二分查找的自变量 `x`，以及关于 `x` 的函数 `f(x)`，以及目标值 `target`。其次是考虑如何编写 `f(x)` 以满足题目需求。
+
+</br>
