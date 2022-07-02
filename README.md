@@ -1,3 +1,11 @@
+# 前言
+
+算法学习的记录，LeetCode 刷题中...
+
+感谢 [Labuladong](https://github.com/labuladong/fucking-algorithm) 、[Carl](https://github.com/youngyangyang04/leetcode-master) 等大佬免费的学习资料
+
+</br>
+
 # 目录
 
 - [前言](#前言)
@@ -8,14 +16,7 @@
     - [快慢指针](#快慢指针)
     - [左右指针](#左右指针)
   - [二维数组的遍历问题](#二维数组的遍历问题)
-
-</br>
-
-# 前言
-
-算法学习的记录，LeetCode 刷题中...
-
-感谢 [Labuladong](https://github.com/labuladong/fucking-algorithm) 、[Carl](https://github.com/youngyangyang04/leetcode-master) 等大佬免费的学习资料
+  - [滑动窗口](#滑动窗口)
 
 </br>
 
@@ -31,6 +32,8 @@
 - [303.区域和检索-数组不可变](Array/303.区域和检索-数组不可变.java) &emsp;[🔗](https://leetcode.cn/problems/range-sum-query-immutable/)
 - [304.二维区域和检索-矩阵不可变](Array/304.二维区域和检索-矩阵不可变.java) &emsp;[🔗](https://leetcode.cn/problems/range-sum-query-2d-immutable/)
 
+> 具体理解在代码内注释
+
 这两道基础题分别从一维和二维层面运用前缀和来解决问题。主要需要弄清楚该计算从哪儿到哪儿的和以及其中任意索引区间内的元素之和该如何表示。
 若使用前缀和(积)方法且前缀和(积)数组为了方便计算而将首位置为0(或1)，则需要时刻注意其起始索引为 1。
 
@@ -39,7 +42,7 @@
 - [238.除自身以外数组的乘积](Array/238.除自身以外数组的乘积.java) &emsp;[🔗](https://leetcode.cn/problems/product-of-array-except-self/)
 - [1352.最后-k-个数的乘积](Array/1352.最后-k-个数的乘积.java) &emsp;[🔗](https://leetcode.cn/problems/product-of-the-last-k-numbers/)
 
-与前缀和思想相似，这两道求积的问题也可以通过先求前缀积再根据具体情况考虑特殊之处。如 #238 可以使用 *前缀积+后缀积* 的方式来实现不使用除法解答；#1352 需要在插入 0 后清空当前前缀积重新开始计算。
+与前缀和思想相似，这两道求积的问题也可以通过先求前缀积再根据具体情况考虑特殊之处。如 [#238](Array/238.除自身以外数组的乘积.java) 可以使用 *前缀积+后缀积* 的方式来实现不使用除法解答；[#1352](Array/1352.最后-k-个数的乘积.java) 需要在插入 0 后清空当前前缀积重新开始计算。
 
 </br>
 
@@ -153,7 +156,9 @@ class Diff {
 快慢指针通过慢指针指向需要修改的元素，快指针遍历数组，当快指针找到符合条件的元素时，将慢指针指向的元素修改为新值，然后慢指针向后移动一位，快指针向后移动一位，继续遍历。
 
 - [26.删除有序数组中的重复项](Array/26.删除有序数组中的重复项.java) &emsp;[🔗](https://leetcode.cn/problems/remove-duplicates-from-sorted-array/)
+  
 - [27.移除元素](Array/27.移除元素.java) &emsp;[🔗](https://leetcode.cn/problems/remove-element/)
+  
 - [283.移动零](Array/283.移动零.java) &emsp;[🔗](https://leetcode.cn/problems/move-zeroes/)
 
 这三道题非常相似，都使用快慢指针来实现原地修改。
@@ -165,8 +170,11 @@ class Diff {
 **左右指针常用在有序数组和字符串问题中。**
 
 - [5.最长回文子串](Array/5.最长回文子串.java) &emsp;[🔗](https://leetcode.cn/problems/longest-palindromic-substring/)
+  
 - [125.验证回文串](Array/125.验证回文串.java) &emsp;[🔗](https://leetcode.cn/problems/valid-palindrome/)
+  
 - [167.两数之和 II - 输入有序数组](Array/167.两数之和-ii-输入有序数组.java) &emsp;[🔗](https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/)
+  
 - [344.反转字符串](Array/344.反转字符串.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-string/)
 
 左右指针比较简单，根据题意进行相应操作即可。在二分查找中也有体现左右指针的特性。
@@ -176,10 +184,70 @@ class Diff {
 ## 二维数组的遍历问题
 
 - [48.旋转图像](Array/48.旋转图像.java) &emsp;[🔗](https://leetcode.cn/problems/rotate-image/)
+  
 - [54.螺旋矩阵](Array/54.螺旋矩阵.java) &emsp;[🔗](https://leetcode.cn/problems/spiral-matrix/)
+  
 - [59.螺旋矩阵 II](Array/59.螺旋矩阵-ii.java) &emsp;[🔗](https://leetcode.cn/problems/spiral-matrix-ii/)
 
-对于矩阵的各种遍历需要多归纳总结规律，如矩阵的逆时针旋转可以按副对角线进行镜像对称，这与48题相反。
+对于矩阵的各种遍历需要多归纳总结规律，如矩阵的逆时针旋转可以按副对角线进行镜像对称，这与 [#48](Array/48.旋转图像.java) 题相反。
+
+</br>
+
+## 滑动窗口
+
+**滑动窗口常用于解决子串问题。**
+
+滑动窗口也是利用双指针来实现的，一个用于延伸现有窗口的 right 指针，和一个用于收缩窗口的 left 指针。在任意时刻，只有一个指针运动，而另一个保持静止。
+
+对于解决滑动窗口问题的代码框架：
+
+```java
+void String slidingWindow(String s) {
+    HashMap<Character, Integer> window = new HashMap<>();
+    
+    // 左右指针
+    int left = 0, right = 0;
+
+    while(right < s.length()) {
+        // 移入窗口的字符
+        char ch = s.charAt(right);
+        // 扩大窗口
+        right++;
+        // 数据操作
+        ...
+
+        // debug 输出
+        System.out.println(window);
+
+        // 判断左窗口是否需要收缩
+        while(window needs shrink) {
+            // 移出窗口的字符
+            char c = s.charAt(left);
+            // 收缩窗口
+            left++;
+            // 数据操作
+            ...
+        }
+    }
+}
+```
+
+其中两处 ... 表示的更新窗口数据的地方
+
+</br>
+
+- [76.最小覆盖子串](Array/76.最小覆盖子串.java) &emsp;[🔗](https://leetcode.cn/problems/minimum-window-substring/)
+
+- [438.找到字符串中所有字母异位词](Array/438.找到字符串中所有字母异位词.java) &emsp;[🔗](https://leetcode.cn/problems/find-all-anagrams-in-a-string/)
+
+- [567.字符串的排列](Array/567.字符串的排列.java) &emsp;[🔗](https://leetcode.cn/problems/permutation-in-string/)
+
+通过滑动窗口的代码框架可以很容易地写出这三题，思路都基本相似。主要需要考虑三个问题：
+1. 什么时候应该扩大窗口？
+   
+2. 什么时候应该缩小窗口？
+   
+3. 什么时候得到一个合法的答案？
 
 </br>
 
