@@ -21,6 +21,13 @@
     - [查找一个数](#查找一个数)
     - [寻找边界的二分搜索](#寻找边界的二分搜索)
     - [二分查找问题的泛化](#二分查找问题的泛化)
+- [链表](#链表)
+  - [双指针](#双指针-1)
+    - [合并、分解链表](#合并分解链表)
+    - [单链表的倒数第 k 个节点](#单链表的倒数第-k-个节点)
+    - [单链表的中点](#单链表的中点)
+    - [判断链表是否包含环](#判断链表是否包含环)
+    - [两个链表是否相交](#两个链表是否相交)
 
 </br>
 
@@ -390,3 +397,99 @@ int solution(int[] nums, int target) {
 最重要的是从题目中抽象出满足使用二分查找的自变量 `x`，以及关于 `x` 的函数 `f(x)`，以及目标值 `target`。其次是考虑如何编写 `f(x)` 以满足题目需求。
 
 </br>
+
+# 链表
+
+## 双指针
+
+### 合并、分解链表
+
+- [21.合并两个有序链表](LinkedList/21.合并两个有序链表.java) &emsp;[🔗](https://leetcode.cn/problems/merge-two-sorted-lists/)
+
+- [23.合并k个升序链表](LinkedList/23.合并k个升序链表.java) &emsp;[🔗](https://leetcode.cn/problems/merge-k-sorted-lists/)
+
+主要是要弄清楚如何找到最小的节点，合并两个有序链表时可以使用双指针来对比哪个更小，合并 k 个时使用优先队列来让更小的节点先出队。
+
+另外，代码中还用到一个链表的算法题中是很常见的**虚拟头结点技巧**，也就是 `dummy` 节点。如果不使用 `dummy` 虚拟节点，代码会复杂很多，而有了 `dummy` 节点这个占位符，可以避免处理空指针的情况，降低代码的复杂性。
+
+- [86.分隔链表](LinkedList/86.分隔链表.java) &emsp;[🔗](https://leetcode.cn/problems/partition-list/)
+
+</br>
+
+### 单链表的倒数第 k 个节点
+
+- [19.删除链表的倒数第n个结点](LinkedList/19.删除链表的倒数第-n-个结点.java) &emsp;[🔗](https://leetcode.cn/problems/remove-nth-node-from-end-of-list/)
+
+如何找到链表的倒数第 `k` 个节点是本题的重点，一般可以先遍历一次计算出链表的长度，第二次遍历删除第 `n - k` 个节点即可。但这样需要遍历两次链表。若使用两个指针 `p1`、`p2`，先让 `p1` 前进 `k` 步，再让 `p2` 与 `p1` 一起前进，那么当 `p1` 到达链表末端时 `p2` 所处的位置就是第 `n - k` 个节点处，即倒数第 `k` 个节点处。这样只需要一次遍历就能找到倒数第 `k` 个节点了。
+
+<br>
+
+### 单链表的中点
+
+- [876.链表的中间结点](LinkedList/876.链表的中间结点.java) &emsp;[🔗](https://leetcode.cn/problems/middle-of-the-linked-list/)
+
+常规方法是先遍历链表得到 `n`，再遍历一次得到 `n / 2` 个节点。如果想一次遍历得到中间节点，可以使用`快慢指针`。让两个指针 `slow` 和 `fast` 同时从 `head` 出发，每当慢指针 `slow` 前进一步，快指针 `fast` 就前进两步。这样，当 `fast` 到达链表末尾时，`slow` 刚好指向了链表的中点。
+
+<br>
+
+### 判断链表是否包含环
+
+- [141.环形链表](LinkedList/141.环形链表.java) &emsp;[🔗](https://leetcode.cn/problems/linked-list-cycle/)
+
+- [142.环形链表 II](LinkedList/142.环形链表-II.java) &emsp;[🔗](https://leetcode.cn/problems/linked-list-cycle-ii/)
+
+判断链表是否有环的问题也需要使用到寻找链表中点的思想。每当慢指针 `slow` 前进一步，快指针 `fast` 就前进两步，如果 `fast` 最终为 `null`，说明链表中没有环；如果最终 `fast` 和 `slow` 相遇，说明链表中有环。
+
+若需要计算环的起点，可以在当快慢指针相遇时，让其中任一个指针指向头节点，然后让它们以相同速度前进，再次相遇时所在的节点位置就是环开始的位置。
+
+> 假设指针相遇时，慢指针 `slow` 走了 `k` 步，那么快指针 `fast` 一定走了 `2k` 步。`fast` 一定比 `slow` 多走了 `k` 步，这多走的 `k` 步就是 `fast` 指针在环里转圈，所以 `k` 的值就是环长度的「整数倍」。
+> 假设相遇点距环起点的距离为 `m`，那么环起点距头结点 `head` 的距离为 `k - m`，也就是说如果从 `head` 前进 `k - m` 步就能到达环起点。
+> 如果从相遇点继续前进 `k - m` 步，也恰好到达环起点。因为 `fast` 指针从相遇点开始走 `k` 步可以转回到相遇点，那走 `k - m` 步肯定就走到环起点了。
+> 所以，只要把快慢指针中的任一个重新指向 head，然后两个指针同速前进，k - m 步后一定会相遇，相遇之处就是环的起点了。
+
+</br>
+
+### 两个链表是否相交
+
+- [160.相交链表](LinkedList/160.相交链表.java) &emsp;[🔗](https://leetcode.cn/problems/intersection-of-two-linked-lists/)
+
+这个题直接的想法可能是用 `HashSet` 记录一个链表的所有节点，然后和另一条链表对比，但这就需要额外的空间。
+
+若不使用额外空间而使用双指针 p1、p2，主要需要解决它们分别在两条链表上前进而不能同时走到公共节点，也就无法得到相交节点的问题，即如何让 p1 和 p2 两个指针能够同时到达相交节点。
+因此可以让 p1、p2 遍历完当前链表后继续遍历对方的链表。这样就相当于两条链表在逻辑上连接在了一起，p1、p2 就可以同时进入相交节点。
+
+---
+另外，也可以使两个指针到达尾部的距离相同来保证两个指针能够同时到达相交节点：
+```java
+public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+    int lenA = 0, lenB = 0;
+    // 计算两条链表的长度
+    for (ListNode p1 = headA; p1 != null; p1 = p1.next) {
+        lenA++;
+    }
+    for (ListNode p2 = headB; p2 != null; p2 = p2.next) {
+        lenB++;
+    }
+    // 让 p1 和 p2 到达尾部的距离相同
+    ListNode p1 = headA, p2 = headB;
+    if (lenA > lenB) {
+        for (int i = 0; i < lenA - lenB; i++) {
+            p1 = p1.next;
+        }
+    } else {
+        for (int i = 0; i < lenB - lenA; i++) {
+            p2 = p2.next;
+        }
+    }
+    // 看两个指针是否会相同，p1 == p2 时有两种情况：
+    // 1. 两条链表不相交，同时走到尾部空指针
+    // 2. 两条链表相交，走到两条链表的相交点
+    while (p1 != p2) {
+        p1 = p1.next;
+        p2 = p2.next;
+    }
+    return p1;
+}
+```
+</br>
+
