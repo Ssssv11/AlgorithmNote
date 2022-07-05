@@ -28,6 +28,9 @@
     - [单链表的中点](#单链表的中点)
     - [判断链表是否包含环](#判断链表是否包含环)
     - [两个链表是否相交](#两个链表是否相交)
+    - [反转链表](#反转链表)
+    - [反转链表的一部分](#反转链表的一部分)
+    - [回文链表](#回文链表)
 
 </br>
 
@@ -492,4 +495,230 @@ public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
 }
 ```
 </br>
+
+### 反转链表
+
+1. 递归反转整个链表
+
+- [206.反转链表](LinkedList/206.反转链表.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-linked-list/)
+
+反转单链表的迭代实现非常简单，而递归实现：
+
+```java
+// 定义：输入一个单链表头结点，将该链表反转，返回新的头结点
+ListNode reverse(ListNode head) {
+    if (head == null || head.next == null) {
+        return head;
+    }
+    ListNode last = reverse(head.next);
+    head.next.next = head;
+    head.next = null;
+    return last;
+}
+```
+
+ 首先 `reverse(head.next)` 执行完成后，整个链表除了头节点，其他节点都进行了反转且尾节点指向了 `null`，剩下只需要将尾节点指向头节点，头节点指向 `null` 即可。
+
+ <br>
+
+ 2. 反转链表的前 N 个节点
+
+若要实现如下函数：
+```java
+// 将链表的前 n 个节点反转（n <= 链表长度）
+ListNode reverseN(ListNode head, int n)
+```
+
+解决思路和反转整个链表差不多：
+```java
+ListNode successor = null; // 后驱节点
+
+// 反转以 head 为起点的 n 个节点，返回新的头结点
+ListNode reverseN(ListNode head, int n) {
+    if (n == 1) {
+        // 记录第 n + 1 个节点
+        successor = head.next;
+        return head;
+    }
+    // 以 head.next 为起点，需要反转前 n - 1 个节点
+    ListNode last = reverseN(head.next, n - 1);
+
+    head.next.next = head;
+    // 让反转之后的 head 节点和后面的节点连起来
+    head.next = successor;
+    return last;
+}
+```
+
+刚才直接把 `head.next` 设置为 `null`，因为整个链表反转后原来的 `head` 变成了整个链表的最后一个节点。但现在 `head` 节点在递归反转之后不一定是最后一个节点了，所以要记录后驱 `successor`（第 n + 1 个节点），反转之后将 `head` 连接上。
+
+</br>
+
+### 反转链表的一部分
+
+给一个索引区间 `[m, n]`（索引从 1 开始），仅仅反转区间中的链表元素：
+
+```java
+ListNode reverseBetween(ListNode head, int m, int n)
+```
+
+如果 `m == 1`，就相当于反转链表开头的 n 个元素：
+
+```java
+ListNode reverseBetween(ListNode head, int m, int n) {
+    // base case
+    if (m == 1) {
+        // 相当于反转前 n 个元素
+        return reverseN(head, n);
+    }
+    // ...
+}
+```
+
+如果 `m != 1`：
+
+```java
+ListNode reverseBetween(ListNode head, int m, int n) {
+    // base case
+    if (m == 1) {
+        return reverseN(head, n);
+    }
+    // 前进到反转的起点触发 base case
+    head.next = reverseBetween(head.next, m - 1, n - 1);
+    return head;
+}
+```
+
+- [92.反转链表 II](LinkedList/92.反转链表 II.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-linked-list-ii/)
+
+虽然迭代实现的时间复杂度与递归实现的时间复杂度相同，且递归实现的空间复杂度更高，但递归的思想很值得学习。
+
+</br>
+
+3. K 个一组反转链表
+
+- [25.K 个一组反转链表](LinkedList/25.K 个一组反转链表.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-nodes-in-k-group/)
+
+由于对链表每次都进行 K 个一组的反转后，剩下的节点同样是一条链表，且规模较原链表小，因此递归同样适用于这个问题。先反转以 `head` 为头节点的 K 个节点，之后将第 `K + 1` 个节点作为 `head` 继续递归反转再将结果拼接即可。
+
+迭代地反转一个区间内的节点：首先若反转整个链表：
+
+```java
+// 反转以 a 为头结点的链表
+ListNode reverse(ListNode a) {
+    ListNode pre, cur, nxt;
+    pre = null; cur = a; nxt = a;
+    while (cur != null) {
+        nxt = cur.next;
+        // 逐个结点反转
+        cur.next = pre;
+        // 更新指针位置
+        pre = cur;
+        cur = nxt;
+    }
+    // 返回反转后的头结点
+    return pre;
+}
+```
+
+反转以 a 为头结点的链表其实就是反转 a 到 `null` 之间的结点，同理，反转 a 到 b 之间的结点只需要：
+
+```java
+while (cur != b) {
+        nxt = cur.next;
+        cur.next = pre;
+        pre = cur;
+        cur = nxt;
+    }
+```
+
+对于 `reverseKGroup` ：
+
+```java
+ListNode reverseKGroup(ListNode head, int k) {
+    if (head == null) return null;
+    // 区间 [a, b) 包含 k 个待反转元素
+    ListNode a, b;
+    a = b = head;
+    for (int i = 0; i < k; i++) {
+        // 不足 k 个，不需要反转，base case
+        if (b == null) return head;
+        b = b.next;
+    }
+    // 反转前 k 个元素
+    ListNode newHead = reverse(a, b);
+    // 递归反转后续链表并连接起来
+    a.next = reverseKGroup(b, k);
+    return newHead;
+}
+```
+
+</br>
+
+### 回文链表
+
+- [234.回文链表](LinkedList/234.回文链表.java) &emsp;[🔗](https://leetcode.cn/problems/palindrome-linked-list/)
+
+与二叉树遍历相似，链表也可以用递归的方式遍历，这里使用后序遍历就可以倒叙遍历链表，再与从头节点开始遍历比较是否相同：
+
+```java
+// 左侧指针
+ListNode left;
+
+boolean isPalindrome(ListNode head) {
+    left = head;
+    return traverse(head);
+}
+
+boolean traverse(ListNode right) {
+    if (right == null) return true;
+    boolean res = traverse(right.next);
+    // 后序遍历代码
+    res = res && (right.val == left.val);
+    left = left.next;
+    return res;
+}
+```
+
+这养做的核心逻辑就是把链表节点放入一个栈，然后再拿出来，这时候元素顺序就是反的。
+
+但是这样的空间复杂度为 `O(N)`。若要不使用额外空间，可以先通过双指针中的快慢指针找到链表的中点，再从 `slow` 开始反转后面的链表，然后进行比较。
+
+需要注意的是，若链表长度为奇数即 `fast` 指针没有指向 `null`，`slow` 还需要再前进一步。且此方法需要修改原链表。
+
+```java
+boolean isPalindrome(ListNode head) {
+    ListNode slow, fast;
+    slow = fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    
+    if (fast != null)
+        slow = slow.next;
+    
+    ListNode left = head;
+    ListNode right = reverse(slow);
+    while (right != null) {
+        if (left.val != right.val)
+            return false;
+        left = left.next;
+        right = right.next;
+    }
+    
+    return true;
+}
+
+ListNode reverse(ListNode head) {
+    ListNode pre = null, cur = head;
+    while (cur != null) {
+        ListNode next = cur.next;
+        cur.next = pre;
+        pre = cur;
+        cur = next;
+    }
+    return pre;
+}
+```
 
