@@ -29,7 +29,6 @@
     - [判断链表是否包含环](#判断链表是否包含环)
     - [两个链表是否相交](#两个链表是否相交)
     - [反转链表](#反转链表)
-    - [反转链表的一部分](#反转链表的一部分)
     - [回文链表](#回文链表)
 
 </br>
@@ -554,7 +553,7 @@ ListNode reverseN(ListNode head, int n) {
 
 </br>
 
-### 反转链表的一部分
+3. 反转链表的一部分
 
 给一个索引区间 `[m, n]`（索引从 1 开始），仅仅反转区间中的链表元素：
 
@@ -595,7 +594,7 @@ ListNode reverseBetween(ListNode head, int m, int n) {
 
 </br>
 
-3. K 个一组反转链表
+4. K 个一组反转链表
 
 - [25.K 个一组反转链表](LinkedList/25.K 个一组反转链表.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-nodes-in-k-group/)
 
