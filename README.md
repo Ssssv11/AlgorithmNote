@@ -31,6 +31,8 @@
     - [反转链表](#反转链表)
     - [回文链表](#回文链表)
 - [字符串](#字符串)
+- [二叉树](#二叉树)
+  - [纲领](#纲领)
 
 </br>
 
@@ -745,3 +747,140 @@ ListNode reverse(ListNode head) {
 其中 [#242](String/242.有效的字母异位词.java) 和 [#387](String/387.字符串中的第一个唯一字符.java) 很相似，都是通过 Hash 映射比较异同，遇到这类题首先可以考虑使用 Hash。而 [#7](String/8.字符串转换整数-atoi.java) 与 [#8](String/8.字符串转换整数-atoi.java) 需要仔细考虑溢出问题。
 
 </br>
+
+# 二叉树
+
+## 纲领
+
+二叉树解题的思维模式分两类：
+
+1. 是否可以通过遍历一遍二叉树得到答案？如果可以，用一个 `traverse` 函数配合外部变量来实现，这叫「遍历」的思维模式。
+
+2. 是否可以定义一个递归函数，通过子问题（子树）的答案推导出原问题的答案？如果可以，写出这个递归函数的定义，并充分利用这个函数的返回值，这叫「分解问题」的思维模式。
+
+无论使用哪种思维模式，都需要思考：
+
+如果单独抽出一个二叉树节点，它需要做什么事情？需要在什么时候（前/中/后序位置）做？递归函数会在所有节点上执行相同的操作，因此只需考虑一个节点。
+
+前序位置，就是刚进入一个节点（元素）的时候，后序位置就是即将离开一个节点（元素）的时候，把代码写在不同位置，代码执行的时机也不同。
+
+**前中后序是遍历二叉树过程中处理每一个节点的三个特殊时间点**，绝不仅仅是三个顺序不同的 `List`。
+
+**二叉树的所有问题，就是在前中后序位置注入巧妙的代码逻辑，去达到自己的目的。我们只需要单独思考每一个节点应该做什么，其他的交给二叉树遍历框架，递归会在所有节点上做相同的操作。**
+
+- [101.对称二叉树](Tree/101.对称二叉树.java) &emsp;[🔗](https://leetcode.cn/problems/symmetric-tree/)
+
+- [104.二叉树的最大深度](Tree/104.二叉树的最大深度.java) &emsp;[🔗](https://leetcode.cn/problems/maximum-depth-of-binary-tree/)
+
+- [102.二叉树的层序遍历](Tree/102.二叉树的层序遍历.java) &emsp;[🔗](https://leetcode.cn/problems/binary-tree-level-order-traversal/)
+
+如 [#104](Tree/104.二叉树的最大深度.java)，显然遍历一遍二叉树，用一个外部变量记录每个节点所在的深度，取最大值就可以得到最大深度，这就是遍历二叉树计算答案的思路。代码如下：
+
+```java
+class Solution {
+    // 记录最大深度
+    int depth = 0;
+    // 记录遍历到的节点的深度
+    int res = 0;
+
+    public int maxDepth(TreeNode root) {
+        traverse(root);
+        return res;
+    }
+    // 遍历二叉树
+    private void traverse(TreeNode root) {
+        if(root == null) {
+            return;
+        }
+        // 前序遍历位置
+        depth++;
+        // 遍历的过程中记录最大深度
+        res = res < depth ? depth : res;
+        traverse(root.left);
+        traverse(root.right);
+        // 后序遍历位置
+        depth--;
+    }
+}
+```
+
+这个解法很好理解，但为什么需要在前序位置增加 `depth`，在后序位置减小 `depth`？
+
+因为前序位置是进入一个节点的时候，后序位置是离开一个节点的时候，`depth` 记录当前递归到的节点深度，把 `traverse` 理解成在二叉树上游走的一个指针，所以当然要这样维护。
+
+至于对 `res` 的更新放到前中后序位置都可以，只要保证在进入节点之后，离开节点之前（即 `depth` 自增之后，自减之前）就行了。
+
+一棵二叉树的最大深度也可以通过子树的最大深度推导出来，这就是分解问题计算答案的思路。代码如下：
+
+```java
+// 定义：输入根节点，返回这棵二叉树的最大深度
+int maxDepth(TreeNode root) {
+	if (root == null) {
+		return 0;
+	}
+	// 利用定义，计算左右子树的最大深度
+	int leftMax = maxDepth(root.left);
+	int rightMax = maxDepth(root.right);
+	// 整棵树的最大深度等于左右子树的最大深度取最大值，
+    // 然后再加上根节点自己
+	int res = Math.max(leftMax, rightMax) + 1;
+
+	return res;
+}
+```
+
+只要明确递归函数的定义，这个解法也不难理解，但为什么主要的代码逻辑集中在后序位置？
+
+因为这个思路正确的核心在于通过子树的最大深度推导出原树的深度首先需要利用递归函数的定义算出左右子树的最大深度，然后推出原树的最大深度，主要逻辑自然放在后序位置。
+
+可以发现前序位置的代码执行是自顶向下的，而后序位置的代码执行是自底向上的。
+
+因此，**前序位置的代码只能从函数参数中获取父节点传递来的数据，而后序位置的代码不仅可以获取参数数据，还可以获取到子树通过函数返回值传递回来的数据**。
+
+举具体的例子，有一棵二叉树：
+
+1. 如果把根节点看做第 1 层，如何打印出每一个节点所在的层数？
+
+2. 如何打印出每个节点的左右子树各有多少节点？
+
+第一个问题：
+
+```java
+// 二叉树遍历函数
+void traverse(TreeNode root, int level) {
+    if (root == null) {
+        return;
+    }
+    // 前序位置
+    printf("节点 %s 在第 %d 层", root, level);
+    traverse(root.left, level + 1);
+    traverse(root.right, level + 1);
+}
+
+// 调用
+traverse(root, 1);
+```
+
+第二个问题：
+
+```java
+// 定义：输入一棵二叉树，返回这棵二叉树的节点总数
+int count(TreeNode root) {
+    if (root == null) {
+        return 0;
+    }
+    int leftCount = count(root.left);
+    int rightCount = count(root.right);
+    // 后序位置
+    printf("节点 %s 的左子树有 %d 个节点，右子树有 %d 个节点",
+            root, leftCount, rightCount);
+
+    return leftCount + rightCount + 1;
+}
+```
+
+这两个问题的根本区别在于：一个节点在第几层，从根节点遍历过来的过程就能顺带记录；而以一个节点为根的整棵子树有多少个节点，需要遍历完子树之后才能数清楚。
+
+**一旦发现题目和子树有关，那大概率要给函数设置合理的定义和返回值，在后序位置写代码了。**
+
+<br>
