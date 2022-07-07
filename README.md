@@ -5,8 +5,10 @@
 感谢 [Labuladong](https://github.com/labuladong/fucking-algorithm) 、[Carl](https://github.com/youngyangyang04/leetcode-master) 等大佬免费的学习资料
 
 Github: https://github.com/Ssssv11/AlgorithmNote
+
 Gitee : https://gitee.com/Ssssv11/AlgorithmNote
-Blog : https://ssssv11.github.io/2022/07/06/%E7%AE%97%E6%B3%95/
+
+Blog : https://ssssv11.github.io/2022/07/06/算法/
 
 </br>
 
