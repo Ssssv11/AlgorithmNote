@@ -898,7 +898,7 @@ int count(TreeNode root) {
 
 - [114.二叉树展开为链表](Tree/114.二叉树展开为链表.java) &emsp;[🔗](https://leetcode-cn.com/problems/flatten-binary-tree-to-linked-list/)
 
-- [116.填充每个节点的下一个右侧节点指针](Tree/116.填充每个节点的下一个右侧节点指针.java) &emsp;[🔗]([(https://leetcode.cn/problems/](https://leetcode.cn/problems/populating-next-right-pointers-in-each-node/))
+- [116.填充每个节点的下一个右侧节点指针](Tree/116.填充每个节点的下一个右侧节点指针.java) &emsp;[🔗](https://leetcode.cn/problems/populating-next-right-pointers-in-each-node/)
 
 - [226.翻转二叉树](Tree/226.翻转二叉树.java) &emsp;[🔗](https://leetcode.cn/problems/invert-binary-tree/)
 
