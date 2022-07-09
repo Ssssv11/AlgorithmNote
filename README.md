@@ -40,6 +40,7 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
 - [二叉树](#二叉树)
   - [纲领](#纲领)
   - [思路](#思路)
+  - [构造二叉树](#构造二叉树)
 
 </br>
 
@@ -916,3 +917,228 @@ int count(TreeNode root) {
 
 </br>
 
+## 构造二叉树
+
+**二叉树的构造问题一般都是使用「分解问题」的思路：构造整棵树 = 根节点 + 构造左子树 + 构造右子树。**
+
+- [654.最大二叉树](Tree/654.最大二叉树.java) &emsp;[🔗](https://leetcode-cn.com/problems/maximum-binary-tree/)
+
+每个二叉树节点都可以认为是一棵子树的根节点，对于根节点，首先要做的是把想办法把自己先构造出来，然后想办法构造自己的左右子树。
+
+所以需要遍历数组把找到最大值 `maxVal`，从而把根节点 `root` 做出来，然后对 `maxVal` 左边的数组和右边的数组进行递归构建，作为 `root` 的左右子树。
+
+伪码如下：
+
+```java
+TreeNode constructMaximumBinaryTree(int[] nums) {
+    if (nums is empty) return null;
+    // 找到数组中的最大值
+    int maxVal = Integer.MIN_VALUE;
+    int index = 0;
+    for (int i = 0; i < nums.length; i++) {
+        if (nums[i] > maxVal) {
+            maxVal = nums[i];
+            index = i;
+        }
+    }
+
+    TreeNode root = new TreeNode(maxVal);
+    // 递归调用构造左右子树
+    root.left = constructMaximumBinaryTree(nums[0..index-1]);
+    root.right = constructMaximumBinaryTree(nums[index+1..nums.length-1]);
+    return root;
+}
+```
+
+当前 `nums` 中的最大值就是根节点，然后根据索引递归调用左右数组构造左右子树即可。
+
+</br>
+
+- [105.从前序与中序遍历序列构造二叉树](Tree/105.从前序与中序遍历序列构造二叉树.java) &emsp;[🔗](https://leetcode-cn.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/)
+
+与上一题类似，需要确定根节点，然后递归构造左右子树。
+
+根据前序遍历的特点可以很容易的找到根节点——前序遍历的第一个数字 `preorder[0]`。关键在于如何通过根节点的值，将 `preorder` 和 `inorder` 数组划分成两半，构造根节点的左右子树
+
+即下面代码中的 `？` 应该如何确定：
+
+```java
+// 存储 inorder 中值到索引的映射
+HashMap<Integer, Integer> valToIndex = new HashMap<>();
+
+public TreeNode buildTree(int[] preorder, int[] inorder) {
+    for (int i = 0; i < inorder.length; i++) {
+        valToIndex.put(inorder[i], i);
+    }
+    return build(preorder, 0, preorder.length - 1, inorder, 0, inorder.length - 1);
+}
+
+/* 
+    build 函数的定义：
+    若前序遍历数组为 preorder[preStart..preEnd]，
+    中序遍历数组为 inorder[inStart..inEnd]，
+    构造二叉树，返回该二叉树的根节点 
+*/
+TreeNode build(int[] preorder, int preStart, int preEnd, int[] inorder, int inStart, int inEnd) {
+    int rootVal = preorder[preStart];
+    // 避免 for 循环寻找 rootVal
+    int index = valToIndex.get(rootVal);
+
+    TreeNode root = new TreeNode(rootVal);
+    // 递归构造左右子树
+    root.left = build(preorder, ?, ?, inorder, ?, ?);
+
+    root.right = build(preorder, ?, ?, inorder, ?, ?);
+    return root;
+}
+```
+
+对于左右子树对应的 `inorder` 数组的起始索引和终止索引比较容易确定：
+
+```java
+root.left = build(preorder, ?, ?, inorder, inStart, index - 1);
+
+root.right = build(preorder, ?, ?, inorder, index + 1, inEnd);
+```
+
+中序遍历的根节点左边就是左子树的节点值，右边就是右子树的节点值。
+
+而对于 `preorder` 数组，可以通过左子树的节点数推导出来，假设左子树的节点数为 `leftSize`，那么可以根据 `inorder` 数组计算出 `leftSize`，而 `preStart + leftSize` 就是左子树的终止索引。
+
+这样就可以完成代码：
+
+```java
+int leftSize = index - inStart;
+
+root.left = build(preorder, preStart + 1, preStart + leftSize, inorder, inStart, index - 1);
+
+root.right = build(preorder, preStart + leftSize + 1, preEnd, inorder, index + 1, inEnd);
+```
+
+</br>
+
+- [106.从中序与后序遍历序列构造二叉树](Tree/106.从中序与后序遍历序列构造二叉树.java) &emsp;[🔗](https://leetcode-cn.com/problems/construct-binary-tree-from-inorder-and-postorder-traversal/)
+
+与 [#105](Tree/105.从前序与中序遍历序列构造二叉树.java) 类似，可以通过后序遍历数组 `postorder` 推导出根节点的值，然后递归构造左右子树。后序遍历数组的最后一个元素就是根节点的值。
+
+```java
+// 存储 inorder 中值到索引的映射
+HashMap<Integer, Integer> valToIndex = new HashMap<>();
+
+TreeNode buildTree(int[] inorder, int[] postorder) {
+    for (int i = 0; i < inorder.length; i++) {
+        valToIndex.put(inorder[i], i);
+    }
+    return build(inorder, 0, inorder.length - 1, postorder, 0, postorder.length - 1);
+}
+
+/* 
+    build 函数的定义：
+    后序遍历数组为 postorder[postStart..postEnd]，
+    中序遍历数组为 inorder[inStart..inEnd]，
+    构造二叉树，返回该二叉树的根节点 
+*/
+TreeNode build(int[] inorder, int inStart, int inEnd, int[] postorder, int postStart, int postEnd) {
+    // root 节点对应的值就是后序遍历数组的最后一个元素
+    int rootVal = postorder[postEnd];
+    // rootVal 在中序遍历数组中的索引
+    int index = valToIndex.get(rootVal);
+
+    TreeNode root = new TreeNode(rootVal);
+    // 递归构造左右子树
+    root.left = build(inorder, ?, ?, postorder, ?, ?);
+
+    root.right = build(inorder, ?, ?, postorder, ?, ?);
+    return root;
+}
+```
+
+首先可以确定左右子树对应的 `inorder` 数组的起始索引和终止索引：
+```java
+root.left = build(inorder, inStart, index - 1, postorder, ?, ?);
+
+root.right = build(inorder, index + 1, inEnd, postorder, ?, ?);
+```
+
+同样可以通过中序遍历数组求出左子树的长度 `leftSize`，在 `postorder` 数组中左子树就从 `postStart` 到 `postStart + leftSize - 1`，而右子树就从 `postStart + leftSize` 到 `postEnd - 1` (`postEnd` 是根节点)。
+
+这样就完成了代码：
+
+```java
+int leftSize = index - inStart;
+
+root.left = build(inorder, inStart, index - 1, postorder, postStart, postStart + leftSize - 1);
+
+root.right = build(inorder, index + 1, inEnd, postorder, postStart + leftSize, postEnd - 1);
+```
+
+</br>
+
+- [889.根据前序和后序遍历构造二叉树](Tree/889.根据前序和后序遍历构造二叉树.java) &emsp;[🔗](https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-postorder-traversal/)
+
+我们可以通过一棵树的前序和中序、中序和后序遍历来唯一确定一棵原始二叉树。但通过前序后序遍历结果无法确定唯一的原始二叉树。
+
+用前序遍历和后序遍历结果还原二叉树，解法逻辑上和 [#105](Tree/105.从前序与中序遍历序列构造二叉树.java)、[#106](Tree/106.从中序与后序遍历序列构造二叉树.java) 差别不大，也是通过控制左右子树的索引来构建：
+
+1. 首先把前序遍历结果的第一个元素或者后序遍历结果的最后一个元素确定为根节点的值。
+
+2. 然后把前序遍历结果的第二个元素作为左子树的根节点的值。
+
+3. 在后序遍历结果中寻找左子树根节点的值，从而确定了左子树的索引边界，进而确定右子树的索引边界，递归构造左右子树即可。
+
+```java
+class Solution {
+    // 存储 postorder 中值到索引的映射
+    HashMap<Integer, Integer> valToIndex = new HashMap<>();
+
+    public TreeNode constructFromPrePost(int[] preorder, int[] postorder) {
+        for (int i = 0; i < postorder.length; i++) {
+            valToIndex.put(postorder[i], i);
+        }
+        return build(preorder, 0, preorder.length - 1, postorder, 0, postorder.length - 1);
+    }
+
+    // 定义：根据 preorder[preStart..preEnd] 和 postorder[postStart..postEnd]
+    // 构建二叉树，并返回根节点。
+    TreeNode build(int[] preorder, int preStart, int preEnd, int[] postorder, int postStart, int postEnd) {
+        if (preStart > preEnd) {
+            return null;
+        }
+        if (preStart == preEnd) {
+            return new TreeNode(preorder[preStart]);
+        }
+
+        // root 节点对应的值就是前序遍历数组的第一个元素
+        int rootVal = preorder[preStart];
+        // root.left 的值是前序遍历第二个元素
+        // 通过前序和后序遍历构造二叉树的关键在于通过左子树的根节点
+        // 确定 preorder 和 postorder 中左右子树的元素区间
+        int leftRootVal = preorder[preStart + 1];
+        // leftRootVal 在后序遍历数组中的索引
+        int index = valToIndex.get(leftRootVal);
+        // 左子树的元素个数
+        int leftSize = index - postStart + 1;
+
+        // 先构造出当前根节点
+        TreeNode root = new TreeNode(rootVal);
+        // 递归构造左右子树
+        // 根据左子树的根节点索引和元素个数推导左右子树的索引边界
+        root.left = build(preorder, preStart + 1, preStart + leftSize, postorder, postStart, index);
+        root.right = build(preorder, preStart + leftSize + 1, preEnd, postorder, index + 1, postEnd - 1);
+
+        return root;
+    }
+}
+```
+
+造成前序和后序遍历构造二叉树结果不唯一的关键就在于：
+
+```java
+int leftRootVal = preorder[preStart + 1];
+```
+
+假设前序遍历的第二个元素是左子树的根节点，但实际上左子树有可能是空指针，那么这个元素就应该是右子树的根节点。由于这里无法确切进行判断，所以导致了最终答案的不唯一。
+
+**总之，二叉树的构造问题一般都是使用「分解问题」的思路：构造整棵树 = 根节点 + 构造左子树 + 构造右子树。先找出根节点，然后根据根节点的值找到左右子树的元素，进而递归构建出左右子树。**
+
+</br>
