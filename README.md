@@ -299,6 +299,8 @@ int binarySearch(int[] nums, int target) {
 }
 ```
 
+- [278.第一个错误的版本](Array/278.第一个错误的版本.java) &emsp;[🔗](https://leetcode.cn/problems/first-bad-version/)
+
 分析二分查找的一个技巧是：不要出现 `else`，而是把所有情况用 `else if` 写清楚，这样可以清楚地展现所有细节。
 
 其中 `...` 标记的部分，就是可能出现细节问题的地方，当见到一个二分查找的代码时，首先注意这几个地方。
