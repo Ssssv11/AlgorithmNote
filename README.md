@@ -1380,9 +1380,11 @@ void traverse(TreeNode root) {
 }
 ```
 
+</br>
+
 - [230.二叉搜索树中第K小的元素](Tree/230.二叉搜索树中第K小的元素.java) &emsp;[🔗](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/)
 
-![BST1](images/BST1.png)
+[![jgopFK.png](https://s1.ax1x.com/2022/07/12/jgopFK.png)](https://imgtu.com/i/jgopFK)
 
 利用 BST 的这个特性就可以轻松完成这道题：中序遍历 BST 升序得到结果，并获取第 `k` 个元素即可:
 
@@ -1417,7 +1419,7 @@ class Solution {
 
 - [1038.从二叉搜索树到更大和树](Tree/1038.从二叉搜索树到更大和树.java) &emsp;[🔗](https://leetcode.cn/problems/binary-search-tree-to-greater-sum-tree/)
 
-![BST2](images/BST2.png)
+[![jgo9JO.png](https://s1.ax1x.com/2022/07/12/jgo9JO.png)](https://imgtu.com/i/jgo9JO)
 
 这两题完全相同，需要将每个节点的值更改为大于等于该节点的值之和，对于 BST 来说，每个节点的左子树都比该节点的值小，右子树都比该节点的值大，因此可以为每个节点加上其右子树的所有值即可。同样利用 BST 中序遍历的特点，但需要降序，即从右到左遍历：
             
@@ -1468,7 +1470,7 @@ BST 的基础操作主要依赖「左小右大」的特性，可以在二叉树�
 
 - [98.验证二叉搜索树](Tree/98.验证二叉搜索树.java) &emsp;[🔗](https://leetcode.cn/problems/validate-binary-search-tree/)
 
-![BST3](images/BST3.png)
+[![jgoiSe.png](https://s1.ax1x.com/2022/07/12/jgoiSe.png)](https://imgtu.com/i/jgoiSe)
 
 按照 BST 左小右大的特性，每个节点想要判断自己是否是合法的 BST 节点，比较自己和左右子树即可：
 
@@ -1489,7 +1491,7 @@ public boolean isValidBST(TreeNode root) {
 
 但是这样会出现问题：BST 的每个节点应该要小于右边子树的所有节点，下面这个二叉树显然不是 BST，因为节点 10 的右子树中有一个节点 6，但是我们的算法会把它判定为合法 BST：
 
-![BST4](images/BST4.png)
+[![jgIxdx.png](https://s1.ax1x.com/2022/07/12/jgIxdx.png)](https://imgtu.com/i/jgIxdx)
 
 出现问题的原因在于，对于每一个节点 `root`，代码值检查了它的左右孩子节点是否符合左小右大的原则；但是根据 BST 的定义，`root` 的整个左子树都要小于 `root.val`，整个右子树都要大于 `root.val`。
 
@@ -1522,7 +1524,7 @@ private boolean isValidBST(TreeNode root, TreeNode min, TreeNode max) {
 
 - [700.二叉搜索树中的搜索](Tree/700.二叉搜索树中的搜索.java) &emsp;[🔗](https://leetcode.cn/problems/search-in-a-binary-search-tree/)
 
-![BST5](images/BST5.png)
+[![jgIzo6.png](https://s1.ax1x.com/2022/07/12/jgIzo6.png)](https://imgtu.com/i/jgIzo6)
 
 如果是在一棵普通的二叉树中寻找：
 
@@ -1601,7 +1603,7 @@ TreeNode deleteNode(TreeNode root, int key) {
 
 情况 1：删除的是叶子结点，没有子树。直接删除。
 
-![BST6](images/BST6.png)
+[![jgoCWD.png](https://s1.ax1x.com/2022/07/12/jgoCWD.png)](https://imgtu.com/i/jgoCWD)
 
 ```java
 if (root.left == null && root.right == null) {
@@ -1611,7 +1613,7 @@ if (root.left == null && root.right == null) {
 
 情况 2：删除的是只有一个子树的节点。则让其子树节点代替该节点的位置。
 
-![BST7](images/BST7.png)
+[![jgoFQH.png](https://s1.ax1x.com/2022/07/12/jgoFQH.png)](https://imgtu.com/i/jgoFQH)
 
 ```java
 // 排除了情况 1 后
@@ -1625,7 +1627,7 @@ if (root.right == null) {
 
 情况 3：删除的是有两个子树的节点。为了不破坏 BST 的性质，需要用左子树中最大的节点，或右子树中最小的节点来代替该节点的位置。
 
-![BST8](images/BST8.png)
+[![jgokyd.png](https://s1.ax1x.com/2022/07/12/jgokyd.png)](https://imgtu.com/i/jgokyd)
 
 ```java
 if (root.left != null && root.right != null) {
@@ -1638,9 +1640,11 @@ if (root.left != null && root.right != null) {
 }
 ```
 
+</br>
+
 - [450.删除二叉搜索树中的节点](Tree/450.删除二叉搜索树中的节点.java) &emsp;[🔗](https://leetcode.cn/problems/delete-node-in-a-bst/)
 
-![BST9](images/BST9.png)
+[![jgoAOA.png](https://s1.ax1x.com/2022/07/12/jgoAOA.png)](https://imgtu.com/i/jgoAOA)
 
 
 ```java
