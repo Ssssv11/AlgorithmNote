@@ -43,6 +43,9 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
   - [构造二叉树](#构造二叉树)
   - [序列化与反序列化](#序列化与反序列化)
   - [归并排序](#归并排序)
+  - [二叉搜索树](#二叉搜索树)
+    - [特性](#特性)
+    - [基础操作](#基础操作)
 
 </br>
 
@@ -1351,4 +1354,351 @@ class Merge {
 **所有递归的算法，本质上都是在遍历一棵（递归）树，然后在节点（前中后序位置）上执行代码。要写递归算法，本质上就是要告诉每个节点需要做什么。**
 
 **如归并排序算法，递归的 `sort` 函数就是二叉树的遍历函数，而 `merge` 函数就是在每个节点上做的事情。**
+</br>
+
+## 二叉搜索树
+
+### 特性
+
+二叉搜索树（Binary Search Tree，BST）的特点：
+
+1. 对于 BST 的每一个节点 `node`，左子树节点的值都比 `node` 的值要小，右子树节点的值都比 `node` 的值大。
+
+2. 对于 BST 的每一个节点 `node`，它的左侧子树和右侧子树都是 BST。
+
+**除了它的定义，还有一个重要的性质：BST 的中序遍历结果是有序的（升序）。**
+
+也就是说，如果输入一棵 BST，可以将 BST 中每个节点的值升序打印出来：
+
+```java
+void traverse(TreeNode root) {
+    if (root == null) return;
+    traverse(root.left);
+    // 中序遍历代码位置
+    print(root.val);
+    traverse(root.right);
+}
+```
+
+- [230.二叉搜索树中第K小的元素](Tree/230.二叉搜索树中第K小的元素.java) &emsp;[🔗](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/)
+
+![BST1](images/BST1.png)
+
+利用 BST 的这个特性就可以轻松完成这道题：中序遍历 BST 升序得到结果，并获取第 `k` 个元素即可:
+
+```java
+class Solution {
+    // 记录结果以及位置
+    int res = 0, rank = 0;
+    public int kthSmallest(TreeNode root, int k) {
+        // 利用 BST 的中序遍历特性
+        traverse(root, k);
+        return res;
+    }
+
+    private void traverse(TreeNode root, int k) {
+        if(root == null) {
+            return;
+        }
+        traverse(root.left, k);
+        // 中序遍历代码位置
+        if(++rank == k) {
+            // 找到第 k 小的元素
+            res = root.val;
+            return;
+        }
+        traverse(root.right, k);
+    }
+}
+```
+</br>
+
+- [538.把二叉搜索树转换为累加树](Tree/538.把二叉搜索树转换为累加树.java) &emsp;[🔗](https://leetcode.cn/problems/convert-bst-to-greater-tree/)
+
+- [1038.从二叉搜索树到更大和树](Tree/1038.从二叉搜索树到更大和树.java) &emsp;[🔗](https://leetcode.cn/problems/binary-search-tree-to-greater-sum-tree/)
+
+![BST2](images/BST2.png)
+
+这两题完全相同，需要将每个节点的值更改为大于等于该节点的值之和，对于 BST 来说，每个节点的左子树都比该节点的值小，右子树都比该节点的值大，因此可以为每个节点加上其右子树的所有值即可。同样利用 BST 中序遍历的特点，但需要降序，即从右到左遍历：
+            
+```java
+void traverse(TreeNode root) {
+    if (root == null) return;
+    // 先递归遍历右子树
+    traverse(root.right);
+    // 中序遍历代码位置
+    print(root.val);
+    // 后递归遍历左子树
+    traverse(root.left);
+}
+```
+
+这段代码可以降序打印 BST 节点的值，如果维护一个外部累加变量 `sum`，然后把 `sum` 赋值给 BST 中的每一个节点：
+
+```java
+TreeNode convertBST(TreeNode root) {
+    traverse(root);
+    return root;
+}
+
+// 记录累加和
+int sum = 0;
+void traverse(TreeNode root) {
+    if (root == null) {
+        return;
+    }
+    traverse(root.right);
+    // 维护累加和
+    sum += root.val;
+    // 将 BST 转化成累加树
+    root.val = sum;
+    traverse(root.left);
+}
+```
+
+核心还是 BST 的中序遍历特性，只不过修改了递归顺序，降序遍历 BST 的元素值，从而契合题目累加树的要求。
+
+BST 相关的问题，要么利用 BST 左小右大的特性提升算法效率，要么利用中序遍历的特性满足题目的要求。
+
+### 基础操作
+
+BST 的基础操作主要依赖「左小右大」的特性，可以在二叉树中做类似二分搜索的操作，寻找一个元素的效率很高。
+
+1. 判断 BST 的合法性
+
+- [98.验证二叉搜索树](Tree/98.验证二叉搜索树.java) &emsp;[🔗](https://leetcode.cn/problems/validate-binary-search-tree/)
+
+![BST3](images/BST3.png)
+
+按照 BST 左小右大的特性，每个节点想要判断自己是否是合法的 BST 节点，比较自己和左右子树即可：
+
+```java
+public boolean isValidBST(TreeNode root) {
+    if(root == null) {
+        return true;
+    }
+    if(root.left != null && root.left.val >= root.val) {
+        return false;
+    }
+    if(root.right != null && root.right.val <= root.val) {
+        return false;
+    }
+    return true;
+}
+```
+
+但是这样会出现问题：BST 的每个节点应该要小于右边子树的所有节点，下面这个二叉树显然不是 BST，因为节点 10 的右子树中有一个节点 6，但是我们的算法会把它判定为合法 BST：
+
+![BST4](images/BST4.png)
+
+出现问题的原因在于，对于每一个节点 `root`，代码值检查了它的左右孩子节点是否符合左小右大的原则；但是根据 BST 的定义，`root` 的整个左子树都要小于 `root.val`，整个右子树都要大于 `root.val`。
+
+```java
+public boolean isValidBST(TreeNode root) {
+    return isValidBST(root, null, null);
+}
+// 限定以 root 为根的子树节点必须满足 max.val > root.val > min.val
+private boolean isValidBST(TreeNode root, TreeNode min, TreeNode max) {
+    if(root == null) {
+        return true;
+    }
+    // 若 root.val 不符合 max 和 min 的限制，说明不是合法 BST
+    if(min != null && root.val <= min.val) {
+        return false;
+    }
+    if(max != null && root.val >= max.val) {
+        return false;
+    }
+    // 限定左子树的最大值是 root.val，右子树的最小值是 root.val
+    return isValidBST(root.left, min, root) && isValidBST(root.right, root, max);
+}
+```
+
+通过使用辅助函数，增加函数参数列表，在参数中携带额外信息，将这种约束传递给子树的所有节点。
+
+</br>
+
+2. 在 BST 中搜索元素
+
+- [700.二叉搜索树中的搜索](Tree/700.二叉搜索树中的搜索.java) &emsp;[🔗](https://leetcode.cn/problems/search-in-a-binary-search-tree/)
+
+![BST5](images/BST5.png)
+
+如果是在一棵普通的二叉树中寻找：
+
+```java
+TreeNode searchBST(TreeNode root, int val);
+    if (root == null) {
+        return null;
+    }
+    if (root.val == val) {
+        return root;
+    }
+    // 当前节点没找到就递归地去左右子树寻找
+    TreeNode left = searchBST(root.left, val);
+    TreeNode right = searchBST(root.right, val);
+
+    return left != null ? left : right;
+}
+```
+
+但这段代码相当于穷举了所有节点，适用于所有二叉树。而这里题目给的是二叉搜索树，因此应该使用二叉搜索树的特点进行查找。不需要递归地搜索两边，类似二分查找思想，根据 `val` 和 `root.val` 的大小比较，就能排除一边：
+
+```java
+public TreeNode searchBST(TreeNode root, int val) {
+    if(root == null) {
+        return null;
+    }
+    // 类似二分查找
+    if(root.val == val) {
+        return root;
+    } else if(root.val > val) {
+        return searchBST(root.left, val);
+    } else {
+        return searchBST(root.right, val);
+    }
+}
+```
+
+对数据结构的操作无非遍历 + 访问，遍历就是「找」，访问就是「改」。一旦涉及「改」，就类似二叉树的构造问题，函数要返回 `TreeNode` 类型，并且要对递归调用的返回值进行接收。
+
+```java
+TreeNode insertIntoBST(TreeNode root, int val) {
+    // 找到空位置插入新节点
+    if (root == null) return new TreeNode(val);
+    // BST 中一般不会插入已存在元素
+    // if (root.val == val)
+    if (root.val < val) 
+        root.right = insertIntoBST(root.right, val);
+    if (root.val > val) 
+        root.left = insertIntoBST(root.left, val);
+    return root;
+}
+```
+
+</br>
+
+3. 在 BST 中删除一个数
+
+与插入操作类似，先「找」再「改」，代码框架：
+
+```java
+TreeNode deleteNode(TreeNode root, int key) {
+    if (root.val == key) {
+        // 找到进行删除
+    } else if (root.val > key) {
+        // 在左子树找
+        root.left = deleteNode(root.left, key);
+    } else if (root.val < key) {
+        // 在右子树找
+        root.right = deleteNode(root.right, key);
+    }
+    return root;
+}
+```
+
+重点在于如何删除该节点且不破坏 BST 的性质。删除一个节点有三种情况：
+
+情况 1：删除的是叶子结点，没有子树。直接删除。
+
+![BST6](images/BST6.png)
+
+```java
+if (root.left == null && root.right == null) {
+    return null;
+}
+```
+
+情况 2：删除的是只有一个子树的节点。则让其子树节点代替该节点的位置。
+
+![BST7](images/BST7.png)
+
+```java
+// 排除了情况 1 后
+if (root.left == null) {
+    return root.right;
+}
+if (root.right == null) {
+    return root.left;
+}
+```
+
+情况 3：删除的是有两个子树的节点。为了不破坏 BST 的性质，需要用左子树中最大的节点，或右子树中最小的节点来代替该节点的位置。
+
+![BST8](images/BST8.png)
+
+```java
+if (root.left != null && root.right != null) {
+    // 找到右子树的最小节点
+    TreeNode minNode = getMin(root.right);
+    // 删除 minNode
+    root.right = deleteNode(root.right, minNode.val);
+    // 把 root 改成 minNode
+    root.val = minNode.val;
+}
+```
+
+- [450.删除二叉搜索树中的节点](Tree/450.删除二叉搜索树中的节点.java) &emsp;[🔗](https://leetcode.cn/problems/delete-node-in-a-bst/)
+
+![BST9](images/BST9.png)
+
+
+```java
+public TreeNode deleteNode(TreeNode root, int key) {
+    if(root == null) {
+        return null;
+    }
+    if(root.val == key) {
+        // 处理情况1、2
+        if (root.left == null && root.right == null) {
+            return null;
+        }
+        if (root.right == null) {
+            return root.left;
+        }
+        if (root.left == null) {
+            return root.right;
+        }
+        // 处理情况3
+        // 获取右子树最小的节点
+        TreeNode minNode = getMin(root.right);
+        // 删除右子树最小的节点
+        root.right = deleteNode(root.right, minNode.val);
+        // 用右子树最小的节点替换 root 节点
+        minNode.left = root.left;
+        minNode.right = root.right;
+        root = minNode;
+    } else if(root .val > key) {
+        root.left = deleteNode(root.left, key);
+    } else {
+        root.right = deleteNode(root.right, key);
+    }
+    return root;
+}
+
+private TreeNode getMin(TreeNode root) {
+    // BST 中最左边的节点就是最小的
+    while(root.left != null) {
+        root = root.left;
+    }
+    return root;
+}
+```
+
+在交换 `root` 和 `minNode` 时：
+
+```java
+// 处理情况3
+// 获取右子树最小的节点
+TreeNode minNode = getMin(root.right);
+// 删除右子树最小的节点
+root.right = deleteNode(root.right, minNode.val);
+// 用右子树最小的节点替换 root 节点
+minNode.left = root.left;
+minNode.right = root.right;
+root = minNode;
+```
+
+先删除了右子树最小的节点再进行替换，避免在修改完右子树后再去删除，这样会导致超时。并且没有使用更简单的直接将 `root.val` 替换为 `minNode.val`，而是进行了一系列复杂链表操作，仅对于这道算法题来说是可以的，但一般不会通过修改节点内部的值来交换节点。因为在实际应用中，BST 节点内部的数据域是用户自定义的，可以非常复杂，而 BST 作为数据结构，其操作应该和内部存储的数据域解耦，所以更倾向于使用指针操作来交换节点而不关心内部数据。
+
 </br>
