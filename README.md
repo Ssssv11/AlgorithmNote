@@ -1241,11 +1241,11 @@ void traverse(TreeNode root) {
 
 可以看出归并排序利用的是分解问题的思路，归并排序的过程可以在逻辑上抽象成一棵二叉树，树上的每个节点的值可以认为是 nums[lo..hi]，叶子节点的值就是数组中的单个元素：
 
-![归并排序1](images/归并排序1.png)
+[![j6jdt1.png](https://s1.ax1x.com/2022/07/11/j6jdt1.png)](https://imgtu.com/i/j6jdt1)
 
 然后，在每个节点的后序位置（左右子节点已经被排好序）的时候执行 `merge` 函数，合并两个子节点上的子数组：
 
-![归并排序2](images/归并排序2.png)
+[![j6jN79.png](https://s1.ax1x.com/2022/07/11/j6jN79.png)](https://imgtu.com/i/j6jN79)
 
 这个 `merge` 操作会在二叉树的每个节点上都执行一遍，执行顺序是二叉树后序遍历的顺序。
 
@@ -1309,7 +1309,7 @@ class Merge {
 
 `sort` 函数对 `nums[lo..mid]` 和 `nums[mid+1..hi]` 递归排序完成之后，我们没有办法原地把它们合并，所以需要 `copy` 到 `temp` 数组里面，然后通过类似于合并有序链表的双指针技巧将 `nums[lo..hi]` 合并成一个有序数组：
 
-![归并排序3](images/归并排序3.png)
+[![j6jakR.png](https://s1.ax1x.com/2022/07/11/j6jakR.png)](https://imgtu.com/i/j6jakR)
 
 注意，这里不是在 `merge` 函数执行的时候 `new` 辅助数组，而是提前把 `temp` 辅助数组 `new` 出来了，这样就避免了在递归中频繁分配和释放内存可能产生的性能问题。
 
@@ -1319,11 +1319,11 @@ class Merge {
 
 - [315.计算右侧小于当前元素的个数](Tree/315.计算右侧小于当前元素的个数.java) &emsp;[🔗](https://leetcode.cn/problems/count-of-smaller-numbers-after-self/)
 
-![归并排序4](images/归并排序4.png)
+[![j6jt0J.png](https://s1.ax1x.com/2022/07/11/j6jt0J.png)](https://imgtu.com/i/j6jt0J)
 
 在使用 `merge` 函数合并两个有序数组时可以知道一个元素 `nums[i]` 后边有多少个元素比 `nums[i]` 小：
 
-![归并排序5](images/归并排序5.png)
+[![j6jYm4.png](https://s1.ax1x.com/2022/07/11/j6jYm4.png)](https://imgtu.com/i/j6jYm4)
 
 此时应该把 `temp[i]` 放到 `nums[p]` 上，因为 `temp[i] < temp[j]`。
 
@@ -1337,7 +1337,7 @@ class Merge {
 
 - [327.区间和的个数](Tree/327.区间和的个数.java) &emsp;[🔗](https://leetcode.cn/problems/count-of-range-sum/)
 
-![归并排序7](images/归并排序7.png)
+[![j6jBp6.png](https://s1.ax1x.com/2022/07/11/j6jBp6.png)](https://imgtu.com/i/j6jBp6)
 
 要求计算计算元素和落在 `[lower, upper]` 中的所有子数组的个数。可以创建一个前缀和数组 `preSum` 来辅助计算区间和。
 
@@ -1345,7 +1345,7 @@ class Merge {
 
 - [493.翻转对](Tree/493.翻转对.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-pairs/)
 
-![归并排序6](images/归并排序6.png)
+[![j6jwfx.png](https://s1.ax1x.com/2022/07/11/j6jwfx.png)](https://imgtu.com/i/j6jwfx)
 
 与 [#315](Tree/315.计算右侧小于当前元素的个数.java) 非常相似，只是判断的条件发生了改变，这里求的是 `nums[i] > 2*nums[j]`。
 
