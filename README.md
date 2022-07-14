@@ -2132,7 +2132,7 @@ private TreeNode find(TreeNode root, TreeNode p, TreeNode q) {
 
 </br>
 
-- [1676.二叉树的最近公共祖先 IV](1676.二叉树的最近公共祖先-iv.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-iv/)
+- [1676.二叉树的最近公共祖先 IV](Tree/1676.二叉树的最近公共祖先-iv.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-iv/)
 
 ![jfM4Xt.png](https://s1.ax1x.com/2022/07/14/jfM4Xt.png)
 
@@ -2146,7 +2146,7 @@ private TreeNode find(TreeNode root, TreeNode p, TreeNode q) {
 
 </br>
 
-- [1644.二叉树的最近公共祖先 II](1644.二叉树的最近公共祖先-ii.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-ii/)
+- [1644.二叉树的最近公共祖先 II](Tree/1644.二叉树的最近公共祖先-ii.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-ii/)
 
 ![jflmxs.png](https://s1.ax1x.com/2022/07/14/jflmxs.png)
 
@@ -2226,7 +2226,7 @@ private TreeNode find(TreeNode root, TreeNode p, TreeNode q) {
 
 </br>
 
-- [235. 二叉搜索树的最近公共祖先](235.二叉搜索树的最近公共祖先.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-search-tree/)
+- [235. 二叉搜索树的最近公共祖先](Tree/235.二叉搜索树的最近公共祖先.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-search-tree/)
 
 ![jf1o0x.png](https://s1.ax1x.com/2022/07/14/jf1o0x.png)
 
