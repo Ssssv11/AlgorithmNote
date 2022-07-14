@@ -48,6 +48,10 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [基础操作](#基础操作)
     - [构造](#构造)
   - [快速排序](#快速排序)
+  - [最近公共祖先](#最近公共祖先)
+    - [寻找一个元素](#寻找一个元素)
+    - [二叉树的最近公共祖先](#二叉树的最近公共祖先)
+  - [完全二叉树的节点数](#完全二叉树的节点数)
 
 </br>
 
@@ -1243,11 +1247,11 @@ void traverse(TreeNode root) {
 
 可以看出归并排序利用的是分解问题的思路，归并排序的过程可以在逻辑上抽象成一棵二叉树，树上的每个节点的值可以认为是 nums[lo..hi]，叶子节点的值就是数组中的单个元素：
 
-[![j6jdt1.png](https://s1.ax1x.com/2022/07/11/j6jdt1.png)](https://imgtu.com/i/j6jdt1)
+![j6jdt1.png](https://s1.ax1x.com/2022/07/11/j6jdt1.png)
 
 然后，在每个节点的后序位置（左右子节点已经被排好序）的时候执行 `merge` 函数，合并两个子节点上的子数组：
 
-[![j6jN79.png](https://s1.ax1x.com/2022/07/11/j6jN79.png)](https://imgtu.com/i/j6jN79)
+![j6jN79.png](https://s1.ax1x.com/2022/07/11/j6jN79.png)
 
 这个 `merge` 操作会在二叉树的每个节点上都执行一遍，执行顺序是二叉树后序遍历的顺序。
 
@@ -1311,7 +1315,7 @@ class Merge {
 
 `sort` 函数对 `nums[lo..mid]` 和 `nums[mid+1..hi]` 递归排序完成之后，我们没有办法原地把它们合并，所以需要 `copy` 到 `temp` 数组里面，然后通过类似于合并有序链表的双指针技巧将 `nums[lo..hi]` 合并成一个有序数组：
 
-[![j6jakR.png](https://s1.ax1x.com/2022/07/11/j6jakR.png)](https://imgtu.com/i/j6jakR)
+![j6jakR.png](https://s1.ax1x.com/2022/07/11/j6jakR.png)
 
 注意，这里不是在 `merge` 函数执行的时候 `new` 辅助数组，而是提前把 `temp` 辅助数组 `new` 出来了，这样就避免了在递归中频繁分配和释放内存可能产生的性能问题。
 
@@ -1321,11 +1325,11 @@ class Merge {
 
 - [315.计算右侧小于当前元素的个数](Tree/315.计算右侧小于当前元素的个数.java) &emsp;[🔗](https://leetcode.cn/problems/count-of-smaller-numbers-after-self/)
 
-[![j6jt0J.png](https://s1.ax1x.com/2022/07/11/j6jt0J.png)](https://imgtu.com/i/j6jt0J)
+![j6jt0J.png](https://s1.ax1x.com/2022/07/11/j6jt0J.png)
 
 在使用 `merge` 函数合并两个有序数组时可以知道一个元素 `nums[i]` 后边有多少个元素比 `nums[i]` 小：
 
-[![j6jYm4.png](https://s1.ax1x.com/2022/07/11/j6jYm4.png)](https://imgtu.com/i/j6jYm4)
+![j6jYm4.png](https://s1.ax1x.com/2022/07/11/j6jYm4.png)
 
 此时应该把 `temp[i]` 放到 `nums[p]` 上，因为 `temp[i] < temp[j]`。
 
@@ -1339,7 +1343,7 @@ class Merge {
 
 - [327.区间和的个数](Tree/327.区间和的个数.java) &emsp;[🔗](https://leetcode.cn/problems/count-of-range-sum/)
 
-[![j6jBp6.png](https://s1.ax1x.com/2022/07/11/j6jBp6.png)](https://imgtu.com/i/j6jBp6)
+![j6jBp6.png](https://s1.ax1x.com/2022/07/11/j6jBp6.png)
 
 要求计算计算元素和落在 `[lower, upper]` 中的所有子数组的个数。可以创建一个前缀和数组 `preSum` 来辅助计算区间和。
 
@@ -1347,7 +1351,7 @@ class Merge {
 
 - [493.翻转对](Tree/493.翻转对.java) &emsp;[🔗](https://leetcode.cn/problems/reverse-pairs/)
 
-[![j6jwfx.png](https://s1.ax1x.com/2022/07/11/j6jwfx.png)](https://imgtu.com/i/j6jwfx)
+![j6jwfx.png](https://s1.ax1x.com/2022/07/11/j6jwfx.png)
 
 与 [#315](Tree/315.计算右侧小于当前元素的个数.java) 非常相似，只是判断的条件发生了改变，这里求的是 `nums[i] > 2*nums[j]`。
 
@@ -1386,7 +1390,7 @@ void traverse(TreeNode root) {
 
 - [230.二叉搜索树中第K小的元素](Tree/230.二叉搜索树中第K小的元素.java) &emsp;[🔗](https://leetcode.cn/problems/kth-smallest-element-in-a-bst/)
 
-[![jgopFK.png](https://s1.ax1x.com/2022/07/12/jgopFK.png)](https://imgtu.com/i/jgopFK)
+![jgopFK.png](https://s1.ax1x.com/2022/07/12/jgopFK.png)
 
 利用 BST 的这个特性就可以轻松完成这道题：中序遍历 BST 升序得到结果，并获取第 `k` 个元素即可:
 
@@ -1421,7 +1425,7 @@ class Solution {
 
 - [1038.从二叉搜索树到更大和树](Tree/1038.从二叉搜索树到更大和树.java) &emsp;[🔗](https://leetcode.cn/problems/binary-search-tree-to-greater-sum-tree/)
 
-[![jgo9JO.png](https://s1.ax1x.com/2022/07/12/jgo9JO.png)](https://imgtu.com/i/jgo9JO)
+![jgo9JO.png](https://s1.ax1x.com/2022/07/12/jgo9JO.png)
 
 这两题完全相同，需要将每个节点的值更改为大于等于该节点的值之和，对于 BST 来说，每个节点的左子树都比该节点的值小，右子树都比该节点的值大，因此可以为每个节点加上其右子树的所有值即可。同样利用 BST 中序遍历的特点，但需要降序，即从右到左遍历：
             
@@ -1472,7 +1476,7 @@ BST 的基础操作主要依赖「左小右大」的特性，可以在二叉树�
 
 - [98.验证二叉搜索树](Tree/98.验证二叉搜索树.java) &emsp;[🔗](https://leetcode.cn/problems/validate-binary-search-tree/)
 
-[![jgoiSe.png](https://s1.ax1x.com/2022/07/12/jgoiSe.png)](https://imgtu.com/i/jgoiSe)
+![jgoiSe.png](https://s1.ax1x.com/2022/07/12/jgoiSe.png)
 
 按照 BST 左小右大的特性，每个节点想要判断自己是否是合法的 BST 节点，比较自己和左右子树即可：
 
@@ -1493,7 +1497,7 @@ public boolean isValidBST(TreeNode root) {
 
 但是这样会出现问题：BST 的每个节点应该要小于右边子树的所有节点，下面这个二叉树显然不是 BST，因为节点 10 的右子树中有一个节点 6，但是我们的算法会把它判定为合法 BST：
 
-[![jgIxdx.png](https://s1.ax1x.com/2022/07/12/jgIxdx.png)](https://imgtu.com/i/jgIxdx)
+![jgIxdx.png](https://s1.ax1x.com/2022/07/12/jgIxdx.png)
 
 出现问题的原因在于，对于每一个节点 `root`，代码值检查了它的左右孩子节点是否符合左小右大的原则；但是根据 BST 的定义，`root` 的整个左子树都要小于 `root.val`，整个右子树都要大于 `root.val`。
 
@@ -1522,11 +1526,11 @@ private boolean isValidBST(TreeNode root, TreeNode min, TreeNode max) {
 
 </br>
 
-2. 在 BST 中搜索元素
+1. 在 BST 中搜索元素
 
 - [700.二叉搜索树中的搜索](Tree/700.二叉搜索树中的搜索.java) &emsp;[🔗](https://leetcode.cn/problems/search-in-a-binary-search-tree/)
 
-[![jgIzo6.png](https://s1.ax1x.com/2022/07/12/jgIzo6.png)](https://imgtu.com/i/jgIzo6)
+![jgIzo6.png](https://s1.ax1x.com/2022/07/12/jgIzo6.png)
 
 如果是在一棵普通的二叉树中寻找：
 
@@ -1582,7 +1586,7 @@ TreeNode insertIntoBST(TreeNode root, int val) {
 
 </br>
 
-3. 在 BST 中删除一个数
+1. 在 BST 中删除一个数
 
 与插入操作类似，先「找」再「改」，代码框架：
 
@@ -1605,7 +1609,7 @@ TreeNode deleteNode(TreeNode root, int key) {
 
 情况 1：删除的是叶子结点，没有子树。直接删除。
 
-[![jgoCWD.png](https://s1.ax1x.com/2022/07/12/jgoCWD.png)](https://imgtu.com/i/jgoCWD)
+![jgoCWD.png](https://s1.ax1x.com/2022/07/12/jgoCWD.png)
 
 ```java
 if (root.left == null && root.right == null) {
@@ -1615,7 +1619,7 @@ if (root.left == null && root.right == null) {
 
 情况 2：删除的是只有一个子树的节点。则让其子树节点代替该节点的位置。
 
-[![jgoFQH.png](https://s1.ax1x.com/2022/07/12/jgoFQH.png)](https://imgtu.com/i/jgoFQH)
+![jgoFQH.png](https://s1.ax1x.com/2022/07/12/jgoFQH.png)
 
 ```java
 // 排除了情况 1 后
@@ -1629,7 +1633,7 @@ if (root.right == null) {
 
 情况 3：删除的是有两个子树的节点。为了不破坏 BST 的性质，需要用左子树中最大的节点，或右子树中最小的节点来代替该节点的位置。
 
-[![jgokyd.png](https://s1.ax1x.com/2022/07/12/jgokyd.png)](https://imgtu.com/i/jgokyd)
+![jgokyd.png](https://s1.ax1x.com/2022/07/12/jgokyd.png)
 
 ```java
 if (root.left != null && root.right != null) {
@@ -1646,7 +1650,7 @@ if (root.left != null && root.right != null) {
 
 - [450.删除二叉搜索树中的节点](Tree/450.删除二叉搜索树中的节点.java) &emsp;[🔗](https://leetcode.cn/problems/delete-node-in-a-bst/)
 
-[![jgoAOA.png](https://s1.ax1x.com/2022/07/12/jgoAOA.png)](https://imgtu.com/i/jgoAOA)
+![jgoAOA.png](https://s1.ax1x.com/2022/07/12/jgoAOA.png)
 
 
 ```java
@@ -1967,3 +1971,430 @@ class Quick {
 
 </br>
 
+## 最近公共祖先
+
+`git pull` 这个命令我们经常会用，它默认是使用 `merge` 方式将远端别人的修改拉到本地；如果带上参数` git pull -r`，就会使用 `rebase` 的方式将远端修改拉到本地。
+
+这二者最直观的区别就是：`merge` 方式合并的分支会看到很多「分叉」，而 `rebase` 方式合并的分支就是一条直线。但无论哪种方式，如果存在冲突，Git 都会检测出来并让你手动解决冲突。
+
+Git 是如何检测两条分支是否存在冲突的呢？
+
+以 `rebase` 命令为例，如下图的情况，在 `dev` 分支执行 `git rebase master`，`dev` 就会接到 `master` 分支之上：
+
+![公共祖先1](https://s2.loli.net/2022/07/14/Q84MnoJvxsPpeZW.png)  
+
+首先找到这两条分支的最近公共祖先 LCA，然后从 `master` 节点开始，重演 LCA 到 `dev` 几个 `commit` 的修改，如果这些修改和 LCA 到 `master` 的 `commit` 有冲突，就会提示你手动解决冲突，最后的结果就是把 `dev` 的分支完全接到 `master` 上面。
+
+### 寻找一个元素
+
+输入一棵没有重复元素的二叉树根节点 `root` 和一个目标值 `val`，写一个函数寻找树中值为 `val` 的节点：
+
+```java
+// 定义：在以 root 为根的二叉树中寻找值为 val 的节点
+TreeNode find(TreeNode root, int val) {
+    // base case
+    if (root == null) {
+        return null;
+    }
+    if (root.val == val) {
+        return root;
+    }
+    // root 不是目标节点，去左子树找
+    TreeNode left = find(root.left, val);
+    if (left != null) {
+        return left;
+    }
+    // 左子树找不到，去左子树找
+    TreeNode right = find(root.right, val);
+    if (right != null) {
+        return right;
+    }
+    // 找不到
+    return null;
+}
+```
+
+基于这段代码进行修改，首先修改 `return` 的位置：
+
+```java
+TreeNode find(TreeNode root, int val) {
+    if (root == null) {
+        return null;
+    }
+    // 前序位置
+    if (root.val == val) {
+        return root;
+    }
+    // root 不是目标节点，去左右子树找
+    TreeNode left = find(root.left, val);
+    TreeNode right = find(root.right, val);
+    
+    return left != null ? left : right;
+}
+```
+
+这段代码也可以达到目的，但实际运行的效率会低一些。这是因为，如果能够在左子树找到目标节点，这段代码还是会去右子树找，所以效率相对差一些。
+
+更进一步，把对 `root.val` 的判断从前序位置移动到后序位置：
+
+```java
+TreeNode find(TreeNode root, int val) {
+    if (root == null) {
+        return null;
+    }
+    // 先去左右子树寻找
+    TreeNode left = find(root.left, val);
+    TreeNode right = find(root.right, val);
+    // 后序位置
+    if (root.val == val) {
+        return root;
+    }
+ 
+    return left != null ? left : right;
+}
+```
+
+这段代码相当于遍历了二叉树的所有节点，就算找到了目标值也需要先去去遍历左右子树，因此效率进一步降低。
+
+现在若将题目修改为寻找值为 `val1` 或 `val2` 的节点：
+
+```java
+// 定义：在以 root 为根的二叉树中寻找值为 val1 或 val2 的节点
+TreeNode find(TreeNode root, int val1, int val2) {
+    // base case
+    if (root == null) {
+        return null;
+    }
+    // 前序位置
+    if (root.val == val1 || root.val == val2) {
+        return root;
+    }
+    // 去左右子树寻找
+    TreeNode left = find(root.left, val1, val2);
+    TreeNode right = find(root.right, val1, val2);
+    // 后序位置，已经知道左右子树是否存在目标值
+
+    return left != null ? left : right;
+}
+```
+
+**写这个查找的目的在于：最近公共祖先系列问题的解法都是把这个函数作为框架的。**
+
+</br>
+
+### 二叉树的最近公共祖先
+
+- [236.二叉树的最近公共祖先](Tree/236.二叉树的最近公共祖先.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/)
+
+![公共祖先2](https://s2.loli.net/2022/07/14/fi5Cq8gJ9banuwZ.png)  
+
+如图示例：
+
+1. 如果 `p` 是节点 6，`q` 是节点 7，那么它们的 LCA 就是节点 5。
+   
+2. 当然，`p` 和 `q` 本身也可能是 LCA，比如 `p` 是节点 4，`q` 是节点 5， `q` 本身就是 LCA 节点。
+
+两个节点的最近公共祖先其实就是这两个节点向根节点的「延长线」的交汇点。如果一个节点能够在它的左右子树中分别找到 `p` 和 `q`，则该节点为 LCA 节点。
+
+因此可以使用前面实现的 `find` 方法，只需在后序位置添加一个判断逻辑，即可改造成寻找最近公共祖先的解法代码：
+
+```java
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    return find(root, p, q);
+}
+
+// 在二叉树中寻找 p 和 q 的最近公共祖先节点
+private TreeNode find(TreeNode root, TreeNode p, TreeNode q) {
+    if(root == null) {
+        return null;
+    }
+    // 前序位置
+    if(root.val == p.val || root.val == q.val) {
+        // 遇到目标值，直接返回
+        return root;
+    }
+    
+    TreeNode left = find(root.left, p, q);
+    TreeNode right = find(root.right, p, q);
+
+    // 后序位置，已经知道左右子树是否存在目标值
+    if(left != null && right != null) {
+        // 当前节点是 LCA 节点
+        return root;
+    }
+    return left != null ? left : right;
+}
+```
+
+在 `find` 函数的后序位置，如果发现 `left` 和 `right` 都非空，就说明当前节点是 LCA 节点，即解决了第一种情况。
+
+在 `find` 函数的前序位置，如果找到一个值为 `p` 或 `q` 的节点则直接返回，恰好解决了第二种情况。这是因为题目的 `p` 和 `q` 一定存在于二叉树中，所以即便遇到 `q` 就直接返回，根本没遍历到 `p`，也依然可以断定 `p` 在 `q` 底下，`q` 就是 LCA 节点。
+
+</br>
+
+- [1676.二叉树的最近公共祖先 IV](1676.二叉树的最近公共祖先-iv.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-iv/)
+
+![jfM4Xt.png](https://s1.ax1x.com/2022/07/14/jfM4Xt.png)
+
+与 [#236](Tree/236.二叉树的最近公共祖先.java) 不同的是，这道题输入的节点不止两个，而是一个节点列表（所有节点都存在于树中），要寻找列表中所有节点的最近公共祖先。
+
+如图所示，输入 `nodes = [7,4,6]`，那么函数应该返回节点 5。
+
+解法逻辑与上题类似，只需将 `nodes` 存入哈希集合来判断遍历到的元素是否存在于 `nodes` 中（详细见代码）。
+
+需要注意的是，这两道题的题目都明确告诉我们这些节点必定存在于二叉树中，如果没有这个前提条件，就需要修改代码了。
+
+</br>
+
+- [1644.二叉树的最近公共祖先 II](1644.二叉树的最近公共祖先-ii.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree-ii/)
+
+![jflmxs.png](https://s1.ax1x.com/2022/07/14/jflmxs.png)
+
+此时 `p` 和 `q` 可能不存在于该二叉树中，因此前面解决标准最近公共祖先问题时 `find` 方法中前序位置的判断就不可行了：
+    
+```java
+// 前序位置
+if (root.val == val1 || root.val == val2) {
+    // 遇到目标值，直接返回
+    return root;
+}
+```
+
+对于这道题来说，`p` 和 `q` 不一定存在于树中，所以不能遇到一个目标值就直接返回，而应该对二叉树进行完全搜索（遍历每一个节点），如果发现 `p` 或 `q` 不存在于树中，那么是不存在 LCA 的。
+
+在 [寻找一个元素](#寻找一个元素) 小节我们写了几种 `find` 方法，其中一种是对二叉树进行完整遍历：
+
+```java
+TreeNode find(TreeNode root, int val) {
+    if (root == null) {
+        return null;
+    }
+    // 先去左右子树寻找
+    TreeNode left = find(root.left, val);
+    TreeNode right = find(root.right, val);
+    // 后序位置
+    if (root.val == val) {
+        return root;
+    }
+ 
+    return left != null ? left : right;
+}
+```
+
+这道题的也类似，只需要将前序位置的判断放到后序位置：
+
+```java
+// 记录 p、q 是否存在于树中
+private boolean foundP = false, foundQ = false;
+
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    TreeNode res = find(root, p, q);
+    if (!foundP || !foundQ) {
+        return null;
+    }
+    // p 和 q 都存在二叉树中，才有公共祖先
+    return res;
+}
+
+private TreeNode find(TreeNode root, TreeNode p, TreeNode q) {
+    if(root == null) {
+        return null;
+    }
+
+    TreeNode left = find(root.left, p, q);
+    TreeNode right = find(root.right, p, q);
+
+    // 后序位置，判断当前节点是不是 LCA 节点
+    if(left != null && right != null) {
+        return root;
+    }
+
+    if(root.val == left.val || root.val == right.val) {
+        if(root.val == left.val) {
+            foundP = true;
+        }
+        if(root.val == right.val) {
+            foundQ = true;
+        }
+        return root;
+    }
+    return left != null ? left : right;
+}
+```
+
+对二叉树进行完全搜索，同时记录 `p` 和 `q` 是否同时存在树中，从而满足题目的要求。
+
+</br>
+
+- [235. 二叉搜索树的最近公共祖先](235.二叉搜索树的最近公共祖先.java) &emsp;[🔗](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-search-tree/)
+
+![jf1o0x.png](https://s1.ax1x.com/2022/07/14/jf1o0x.png)
+
+用前面标准最近公共祖先问题的代码同样可以解决这道题，但没有用到 BST 左小右大的性质，显然不是最优解。
+
+在标准的最近公共祖先问题中，我们要在后序位置通过左右子树的搜索结果来判断当前节点是不是 LCA：
+
+```java
+TreeNode left = find(root.left, val1, val2);
+TreeNode right = find(root.right, val1, val2);
+
+// 后序位置，判断当前节点是不是 LCA 节点
+if (left != null && right != null) {
+    return root;
+}
+```
+
+**但对于 BST 来说，根本不需要遍历子树，由于 BST 左小右大的性质，将当前节点的值与 `val1` 和 `val2` 作对比即可判断当前节点是不是 LCA：**
+
+假设 `val1 < val2`，那么 `val1 <= root.val <= val2` 则说明当前节点就是 LCA；若 `root.val` 比 `val1` 小，则需要去值更大的右子树寻找 LCA；若 `root.val` 比 `val2` 还，则需要去值更小的左子树寻找 LCA。
+
+```java
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    int val1 = p.val < q.val ? p.val : q.val;
+    int val2 = p.val > q.val ? p.val : q.val;
+    return find(root, val1, val2);
+}
+
+// 在 BST 中寻找 val1 和 val2 的最近公共祖先节点
+private TreeNode find(TreeNode root, int val1, int val2) {
+    if(root == null) {
+        return null;
+    }
+    if(root.val < val1) {
+        // 当前节点太小，去右子树找
+        return find(root.right, val1, val2);
+    }
+    if(root.val > val2) {
+        // 当前节点太大，去左子树找
+        return find(root.left, val1, val2);
+    }
+    // 此时 val1 <= root.val <= val2
+    // 则该节点就是最近公共祖先
+    return root;
+}
+```
+
+这样就把 BST 的性质利用上了。
+
+</br>
+
+- [1650.二叉树的最近公共祖先 III](Tree/1650.二叉树的最近公共祖先-iii.java) &emsp;[🔗](https://leetcode-cn.com/problems/lowest-common-ancestor-of-a-binary-tree-iii/)
+
+![jf83If.png](https://s1.ax1x.com/2022/07/14/jf83If.png)
+
+由于节点 `Node` 包含其父节点的引用，因此不需要输入根节点。这道题也就可以转化为单链表相交的问题：`parent` 就是 `next` 指针，需要返回两个节点的交点。
+
+    
+ ```java
+public Node lowestCommonAncestor(Node p, Node q) {
+    Node a = p, b = q;
+    while(a != b) {
+        if(a == null) {
+            // a 走一步，如果走到根节点，转到 q 节点
+            a = q;
+        } else {
+            a = a.parent;
+        }
+        if(b == null) {
+            // a 走一步，如果走到根节点，转到 q 节点
+            b = p;
+        } else {
+            b = b.parent;
+        }
+    }   
+    return a;
+}
+```
+
+关于单链表的交点问题在之前篇章已经讲过，这里不再赘述（[#链表相交问题](#两个链表是否相交)）。
+
+</br>
+
+## 完全二叉树的节点数
+
+- [222.完全二叉树的节点个数](Tree/222.完全二叉树的节点个数.java) &emsp;[🔗](https://leetcode-cn.com/problems/count-complete-tree-nodes/)
+
+![jfY2Qg.png](https://s1.ax1x.com/2022/07/14/jfY2Qg.png)
+
+第一时间可以想到遍历整棵树来计算节点个数：
+
+```java
+public int countNodes(TreeNode root) {
+    return traverse(root);
+}
+
+private int traverse(TreeNode root) {
+    if(root == null) {
+        return 0;
+    }
+    int left = traverse(root.left);
+    int right = traverse(root.right);
+    return left + right + 1;
+}
+```
+
+但这样的时间复杂度为 `O(N)`，而且并没有利用到它是一颗完全二叉树这个前提。
+
+首先要明确一下两个关于二叉树的名词「完全二叉树」和「满二叉树」。
+
+完全二叉树如下图，每一层都是紧凑靠左排列的：
+
+![jftTHA.png](https://s1.ax1x.com/2022/07/14/jftTHA.png)
+
+满二叉树如下图，是一种特殊的完全二叉树，每层都是是满的，像一个稳定的三角形：
+
+![jftoBd.png](https://s1.ax1x.com/2022/07/14/jftoBd.png)
+
+若要求一颗普通的树的节点数，可以通过上面代码遍历所有节点进行统计:
+
+```java
+public int countNodes(TreeNode root) {
+    if (root == null) {
+        return 0;
+    }
+    return 1 + countNodes(root.left) + countNodes(root.right);
+}
+```
+
+而若要求一颗满二叉树的节点数，节点总数就和树的高度呈指数关系：
+
+```java
+public int countNodes(TreeNode root) {
+    int h = 0;
+    // 计算树的高度
+    while (root != null) {
+        root = root.left;
+        h++;
+    }
+    // 节点总数就是 2^h - 1
+    return (int)Math.pow(2, h) - 1;
+}
+```
+
+完全二叉树比普通二叉树特殊，但又没有满二叉树那么特殊，计算它的节点总数，可以是普通二叉树和完全二叉树的结合版：
+
+```java
+public int countNodes(TreeNode root) {
+    TreeNode l = root, r = root;
+    // 沿最左侧和最右侧分别计算高度
+    int hl = 0, hr = 0;
+    while (l != null) {
+        l = l.left;
+        hl++;
+    }
+    while (r != null) {
+        r = r.right;
+        hr++;
+    }
+    // 如果左右侧计算的高度相同，则是一棵满二叉树
+    if (hl == hr) {
+        return (int)Math.pow(2, hl) - 1;
+    }
+    // 如果左右侧的高度不同，则按照普通二叉树的逻辑计算
+    return 1 + countNodes(root.left) + countNodes(root.right);
+}
+```
+
+分情况来选择不同的方式计算节点数，时间复杂度是 `O(logN*logN)`。
+
+</br>
