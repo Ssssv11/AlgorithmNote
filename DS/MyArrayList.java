@@ -18,10 +18,17 @@ public class MyArrayList<E> implements Iterable<E> {
      */
     private static final int INIT_CAP = 1;
 
+    /**
+     * Constructs an empty list with an initial capacity of ten.
+     */
     public MyArrayList() {
         this(INIT_CAP);
     }
 
+     /**
+     * Constructs an empty list with the specified initial capacity.
+     * @param  initialCapacity  the initial capacity of the list
+     */
     @SuppressWarnings("unchecked")
     public MyArrayList(int initCapacity) {
         data = (E[]) new Object[initCapacity];
@@ -30,8 +37,12 @@ public class MyArrayList<E> implements Iterable<E> {
 
     /**
      * 增
-     * @param index
-     * @param e
+     * Inserts the specified element at the specified position in this
+     * list. Shifts the element currently at that position (if any) and
+     * any subsequent elements to the right (adds one to their indices).
+     * @param index index at which the specified element is to be inserted
+     * @param e element to be inserted
+     * @throws IndexOutOfBoundsException
      */
     public void add(int index, E e) {
         // 检查索引越界
@@ -70,8 +81,12 @@ public class MyArrayList<E> implements Iterable<E> {
 
     /**
      * 删
-     * @param index
-     * @return
+     * Removes the element at the specified position in this list.
+     * Shifts any subsequent elements to the left (subtracts one from their
+     * indices).
+     * @param index the index of the element to be removed
+     * @return the element that was removed from the list
+     * @throws IndexOutOfBoundsException
      */
     public E remove(int index) {
         // 检查索引越界
@@ -116,8 +131,12 @@ public class MyArrayList<E> implements Iterable<E> {
 
     /**
      * 改
-     * @param index
-     * @return
+     * Replaces the element at the specified position in this list with
+     * the specified element.
+     * @param index index of the element to replace
+     * @param e element to be stored at the specified position
+     * @return the element previously at the specified position
+     * @throws IndexOutOfBoundsException
      */
     public E set(int index, E e) {
         // 检查索引越界
@@ -130,8 +149,9 @@ public class MyArrayList<E> implements Iterable<E> {
 
     /**
      * 查
-     * @param index
-     * @return
+     * Returns the element at the specified position in this list.
+     * @param index index of the element to return
+     * @return he element at the specified position in this list
      */
     public E get(int index) {
         // 检查索引越界
@@ -195,6 +215,13 @@ public class MyArrayList<E> implements Iterable<E> {
         data = temp;
     }
 
+    /**
+     * Returns an iterator over the elements in this list in proper sequence.
+     *
+     * <p>The returned iterator is <a href="#fail-fast"><i>fail-fast</i></a>.
+     *
+     * @return an iterator over the elements in this list in proper sequence
+     */
     @Override
     public Iterator<E> iterator() {
         return new Iterator<E>() {
@@ -221,7 +248,7 @@ public class MyArrayList<E> implements Iterable<E> {
         list.remove(3);
         list.add(1, 9);
         list.addFirst(100);
-        int val = list.removeLast();
+        list.removeLast();
 
         Iterator<Integer> iterator = list.iterator();
         while(iterator.hasNext()) {
