@@ -52,6 +52,14 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [寻找一个元素](#寻找一个元素)
     - [二叉树的最近公共祖先](#二叉树的最近公共祖先)
   - [完全二叉树的节点数](#完全二叉树的节点数)
+- [图](#图)
+  - [图的逻辑结构和具体实现](#图的逻辑结构和具体实现)
+  - [图的遍历](#图的遍历)
+  - [拓扑排序](#拓扑排序)
+    - [环检测算法(DFS)](#环检测算法dfs)
+    - [拓扑排序算法(DFS)](#拓扑排序算法dfs)
+    - [环检测算法(BFS)](#环检测算法bfs)
+    - [拓扑排序(BFS)](#拓扑排序bfs)
 
 </br>
 
@@ -2396,5 +2404,522 @@ public int countNodes(TreeNode root) {
 ```
 
 分情况来选择不同的方式计算节点数，时间复杂度是 `O(logN*logN)`。
+
+</br>
+
+# 图
+
+## 图的逻辑结构和具体实现
+
+一幅图是由节点和边构成的，逻辑结构如下：
+
+![j4XVQs.jpg](https://s1.ax1x.com/2022/07/16/j4XVQs.jpg)
+
+根据这个逻辑结构，可以认为每个节点的实现如下：
+
+```java
+// 图节点的逻辑结构
+class Vertex {
+    int id;
+    Vertex[] neighbors;
+}
+```
+
+它和多叉树节点几乎完全一样：
+
+```java
+// 基本的 N 叉树节点
+class TreeNode {
+    int val;
+    TreeNode[] children;
+}
+```
+
+所以，图本质上就是个高级的多叉树，适用于树的 DFS/BFS 遍历算法，全部适用于图。
+
+不过上面的这种实现是「逻辑上的」，实际上很少用 `Vertex` 类实现图，而是用邻接表和邻接矩阵来实现。
+
+如上图所示的图，用邻接表和邻接矩阵的存储方式如下：
+
+![j4ji0x.png](https://s1.ax1x.com/2022/07/16/j4ji0x.png)
+
+邻接表很直观，把每个节点 `x` 的邻居都存到一个列表里，然后把 `x` 和这个列表关联起来，这样就可以通过一个节点 `x` 找到它的所有相邻节点。
+
+邻接矩阵则是一个二维布尔数组，称为 `matrix`，如果节点 `x` 和 `y` 是相连的，那么就把 `matrix[x][y]` 设为 `true`（上图中绿色的方格代表 `true`）。如果想找节点 `x` 的邻居，去扫一圈 `matrix[x][..]` 就可以了。
+
+如果用代码的形式来表现，邻接表和邻接矩阵大概长这样：
+
+```java
+// 邻接表
+// graph[x] 存储 x 的所有邻居节点
+List<Integer>[] graph;
+
+// 邻接矩阵
+// matrix[x][y] 记录 x 是否有一条指向 y 的边
+boolean[][] matrix;
+```
+
+对于邻接表，优点是占用的空间少。但邻接表无法快速判断两个节点是否相邻。
+
+对于邻接表，优点是可以快速判断两个节点是否相邻，只需要判断 `matrix[i][j]` 是否为 `true`。但占用的空间大。
+
+> 在常规的算法题中，邻接表的使用会更频繁一些，主要是因为操作起来较为简单，但这不意味着邻接矩阵应该被轻视。矩阵是一个强有力的数学工具，图的一些隐晦性质可以借助精妙的矩阵运算展现出来。
+
+图论中的度(degree)：在无向图中，「度」就是每个节点相连的边的条数。
+
+由于有向图的边有方向，所以有向图中每个节点「度」被细分为入度（indegree）和出度（outdegree），如下图：
+
+![](https://s3.bmp.ovh/imgs/2022/07/16/ce98179a2c5048b1.png)
+
+其中节点 `3` 的入度为 3（有三条边指向它），出度为 1（它有 1 条边指向别的节点）。
+
+其他更复杂的模型都是基于这个最简单的图衍生出来的。
+
+</br>
+
+## 图的遍历
+
+参考多叉树的 DFS 遍历框架如下：
+
+```java
+// 多叉树遍历框架
+void traverse(TreeNode root) {
+    if (root == null) return;
+    // 前序位置
+    for (TreeNode child : root.children) {
+        traverse(child);
+    }
+    // 后序位置
+}
+```
+
+图和多叉树最大的区别是，图是可能包含环的，从图的某一个节点开始遍历，有可能走了一圈又回到这个节点，而树不会出现这种情况，从某个节点出发必然走到叶子节点，不会回到它自身。
+
+所以，如果图包含环，遍历框架就要一个 `visited` 数组进行辅助：
+
+```java
+// 记录被遍历过的节点
+boolean[] visited;
+// 记录从起点到当前节点的路径
+boolean[] onPath;
+
+// 图遍历框架
+void traverse(Graph graph, int s) {
+    if (visited[s]) return;
+    // 经过节点 s，标记为已遍历
+    visited[s] = true;
+    // 做选择：标记节点 s 在路径上
+    onPath[s] = true;
+    for (int neighbor : graph.neighbors(s)) {
+        traverse(graph, neighbor);
+    }
+    // 撤销选择：节点 s 离开路径
+    onPath[s] = false;
+}
+```
+
+注意 `visited` 和 `onPath` 数组的区别，前者用于记录节点是否被遍历过，后者用于记录从起点到当前节点的路径。`onPath` 在处理路径相关的问题时可以用到。
+
+</br>
+
+- [797.所有可能的路径](Graph/797.所有可能的路径.java) &emsp;[🔗](https://leetcode.cn/problems/all-paths-from-source-to-target/)
+
+![](https://i.bmp.ovh/imgs/2022/07/16/93d0535f299a3f84.png)
+
+以 `0` 为起点遍历图，同时记录遍历过的路径，当遍历到终点时将路径记录下来即可。由于输入的图是无环图，因此不需要使用 `visited` 数组辅助：
+
+```java
+// 记录所有路径
+List<List<Integer>> res = new LinkedList<>();
+
+public List<List<Integer>> allPathsSourceTarget(int[][] graph) {
+    // 维护递归过程中经过的路径
+    LinkedList<Integer> path = new LinkedList<>();
+    traverse(graph, 0, path);
+    return res;
+}
+
+// 图的遍历框架
+private void traverse(int[][] graph, int s, LinkedList<Integer> path) {
+    // 添加节点 s 到路径
+    path.addLast(s);
+
+    int n = graph.length;
+    if(s == n - 1) {
+        // 到达终点
+        res.add(new LinkedList<>(path));
+        path.removeLast();
+        return;
+    }
+
+    // 递归每个相邻节点
+    for(int v : graph[s]) {
+        traverse(graph, v, path);
+    }
+
+    // 从路径移出节点 s
+    path.removeLast();
+}
+```
+
+注意 Java 的语言特性，因为 Java 函数参数传的是对象引用，所以向 `res` 中添加 `path` 时需要拷贝一个新的列表，否则最终 `res` 中的列表都是空的。
+
+</br>
+
+## 拓扑排序
+
+### 环检测算法(DFS)
+
+- [207.课程表](Graph/207.课程表.java) &emsp;[🔗](https://leetcode.cn/problems/course-schedule)
+
+![](https://i.bmp.ovh/imgs/2022/07/16/fc7f1a7787d947d1.png)
+
+当存在循环依赖时，无法修完所有课程。**依赖问题首先想到的是把问题转化成「有向图」，只要图中存在环，那就说明存在循环依赖。**
+
+可以把课程看成「有向图」中的节点，节点编号分别是 `0, 1, ..., numCourses-1`，把课程之间的依赖关系看做节点之间的有向边。如必须修完课程 `1` 才能修课程 `3`，那么就有一条有向边从节点 `1` 指向 `3`。
+
+如果生成当有向图中存在环，说明课程之间存在循环依赖，无法全部上完；反之，如果没有环，就可以完成全部课程。
+
+使用邻接表：
+
+```java
+List<Integer>[] graph;
+```
+
+`graph[s]` 是一个列表，存储着节点 `s` 所指向的节点。生成图：
+
+```java
+List<Integer>[] buildGraph(int numCourses, int[][] prerequisites) {
+    // 图中共有 numCourses 个节点
+    List<Integer>[] graph = new LinkedList[numCourses];
+    for (int i = 0; i < numCourses; i++) {
+        graph[i] = new LinkedList<>();
+    }
+    for (int[] edge : prerequisites) {
+        int from = edge[1], to = edge[0];
+        // 添加一条从 from 指向 to 的有向边
+        // 边的方向是「被依赖」关系，即修完课程 from 才能修课程 to
+        graph[from].add(to);
+    }
+    return graph;
+}
+```
+
+遍历图：
+
+```java
+// 防止重复遍历同一个节点
+boolean[] visited;
+
+boolean canFinish(int numCourses, int[][] prerequisites) {
+    List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+    
+    visited = new boolean[numCourses];
+    for (int i = 0; i < numCourses; i++) {
+        traverse(graph, i);
+    }
+}
+
+// 从节点 s 开始 DFS 遍历，将遍历过的节点标记为 true
+void traverse(List<Integer>[] graph, int s) {
+    if(visited[s]) {
+        return;
+    }
+    /* 前序遍历代码位置 */
+    // 将当前节点标记为已遍历
+    visited[s] = true;
+    for(int t : graph[s]) {
+        traverse(graph, t);
+    }
+    /* 后序遍历代码位置 */
+}
+```
+
+注意图中并不是所有节点都相连，所以要用一个 for 循环将所有节点都作为起点调用一次 DFS 搜索算法。
+只需要再添加一个布尔数组 `onPath` 记录当前 `traverse` 经过的路径：
+
+```java
+boolean[] onPath;
+boolean[] visited;
+
+boolean hasCycle = false;
+
+void traverse(List<Integer>[] graph, int s) {
+    if (onPath[s]) {
+        // 发现环
+        hasCycle = true;
+    }
+    if (visited[s] || hasCycle) {
+        return;
+    }
+    // 将节点 s 标记为已遍历
+    visited[s] = true;
+    // 开始遍历节点 s
+    onPath[s] = true;
+    for (int t : graph[s]) {
+        traverse(graph, t);
+    }
+    // 节点 s 遍历完成
+    onPath[s] = false;
+}
+```
+
+在进入节点 `s` 的时候将 `onPath[s]` 标记为 `true`，离开时标记回 `false`，如果发现 `onPath[s]` 已经被标记，说明出现了环。
+
+完整代码：
+
+```java
+// 记录遍历过的节点
+private boolean[] visited;
+
+// 记录一次递归堆栈中的节点
+private boolean[] onPath;
+
+// 记录图中是否有环
+private boolean hasCycle = false;
+
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+    List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+
+    visited = new boolean[numCourses];
+    onPath = new boolean[numCourses];
+    
+    for (int i = 0; i < numCourses; i++) {
+        traverse(graph, i);
+    }
+    return !hasCycle;
+}
+
+private List<Integer>[] buildGraph(int numCourses, int[][] prerequisites) {
+    List<Integer>[] graph = new LinkedList[numCourses];
+    for (int i = 0; i < numCourses; i++) {
+        graph[i] = new LinkedList<>();
+    }
+
+    for(int[] edge : prerequisites) {
+        int from = edge[1], to = edge[0];
+        // 边的方向是「被依赖」关系，即修完课程 from 才能修课程 to
+        graph[from].add(to);
+    }
+    return graph;
+}
+
+private void traverse(List<Integer>[] graph, int s){
+    if(onPath[s]) {
+        // 存在环
+        hasCycle = true;
+    }
+    if(visited[s] || hasCycle) {
+        return;
+    }
+
+    visited[s] = true;
+    onPath[s] = true;
+    for(int t : graph[s]){
+        traverse(graph, t);
+    }
+    onPath[s] = false;
+}
+```
+
+</br>
+
+### 拓扑排序算法(DFS)
+
+- [210.课程表 II](Graph/210.课程表-ii.java) &emsp;[🔗](https://leetcode-cn.com/problems/course-schedule-ii)
+
+![](https://i.bmp.ovh/imgs/2022/07/16/d982dfeffc93194d.png)
+
+与 [#207](Graph/207.课程表.java) 不同的事，需要进一步返回一个合理的上课顺序，保证开始修每个课程时，前置的课程都已经修完。
+
+如果一幅有向图中存在环，是无法进行 [拓扑排序](https://baijiahao.baidu.com/s?id=1717652999874154909&wfr=spider&for=pc) 的。如果把课程抽象成节点，课程之间的依赖关系抽象成有向边，那么拓扑排序结果就是上课顺序。
+
+**将后序遍历的结果进行反转，就是拓扑排序的结果。**
+
+> 是否需要反转看的是对边的定义，即依赖与被依赖关系。
+
+对于环的判断，可以使用上提的主函数，完整代码：
+
+```Java
+// 记录后序遍历结果
+List<Integer> postorder = new ArrayList<>();
+// 记录是否存在环
+boolean hasCycle = false;
+boolean[] visited, onPath;
+
+// 主函数
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+    List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+    visited = new boolean[numCourses];
+    onPath = new boolean[numCourses];
+    // 遍历图
+    for (int i = 0; i < numCourses; i++) {
+        traverse(graph, i);
+    }
+    // 有环图无法进行拓扑排序
+    if (hasCycle) {
+        return new int[]{};
+    }
+    // 逆后序遍历结果即为拓扑排序结果
+    Collections.reverse(postorder);
+    int[] res = new int[numCourses];
+    for (int i = 0; i < numCourses; i++) {
+        res[i] = postorder.get(i);
+    }
+    return res;
+}
+
+// 图遍历函数
+void traverse(List<Integer>[] graph, int s) {
+    if (onPath[s]) {
+        // 发现环
+        hasCycle = true;
+    }
+    if (visited[s] || hasCycle) {
+        return;
+    }
+    // 前序遍历位置
+    onPath[s] = true;
+    visited[s] = true;
+    for (int t : graph[s]) {
+        traverse(graph, t);
+    }
+    // 后序遍历位置
+    postorder.add(s);
+    onPath[s] = false;
+}
+
+List<Integer>[] buildGraph(int numCourses, int[][] prerequisites) {
+    // ...
+}
+```
+
+</br>
+
+### 环检测算法(BFS)
+
+```java
+// 主函数
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+    // 建图，有向边代表「被依赖」关系
+    List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+    // 构建入度数组
+    int[] indegree = new int[numCourses];
+    for (int[] edge : prerequisites) {
+        int from = edge[1], to = edge[0];
+        // 节点 to 的入度加一
+        indegree[to]++;
+    }
+
+    // 根据入度初始化队列中的节点
+    Queue<Integer> q = new LinkedList<>();
+    for (int i = 0; i < numCourses; i++) {
+        if (indegree[i] == 0) {
+            // 节点 i 没有入度，即没有依赖的节点
+            // 可以作为拓扑排序的起点，加入队列
+            q.offer(i);
+        }
+    }
+
+    // 记录遍历的节点个数
+    int count = 0;
+    // 开始执行 BFS 循环
+    while (!q.isEmpty()) {
+        // 弹出节点 cur，并将它指向的节点的入度减一
+        int cur = q.poll();
+        count++;
+        for (int next : graph[cur]) {
+            indegree[next]--;
+            if (indegree[next] == 0) {
+                // 如果入度变为 0，说明 next 依赖的节点都已被遍历
+                q.offer(next);
+            }
+        }
+    }
+
+    // 如果所有节点都被遍历过，说明不成环
+    return count == numCourses;
+}
+
+List<Integer>[] buildGraph(int n, int[][] edges) {
+    // ...
+}
+```
+
+1. 构建邻接表，边的方向表示「被依赖」关系。
+
+2. 构建一个 `indegree` 数组记录每个节点的入度，即 `indegree[i]` 记录节点 `i` 的入度。
+
+3. 对 BFS 队列进行初始化，将入度为 0 的节点首先装入队列。
+
+4. 开始执行 BFS 循环，不断弹出队列中的节点，减少相邻节点的入度，并将入度变为 0 的节点加入队列。
+
+5. 如果最终所有节点都被遍历过（`count` 等于节点数），则说明不存在环，反之则说明存在环。
+
+![](https://i.bmp.ovh/imgs/2022/07/16/c72d2bb208786b4d.png)
+
+如果存在节点没有被遍历即，那么说明图中存在环。
+
+</br>
+
+### 拓扑排序(BFS)
+
+由上面的思路可以发现，图中每个节点入队的顺序就是一个可行的拓扑排序结果。
+
+因此只需要修改 BFS 版本的环检测算法，记录节点的遍历顺序即可得到拓扑排序的结果：
+
+```java
+// 主函数
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+    // 建图，和环检测算法相同
+    List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+    // 计算入度，和环检测算法相同
+    int[] indegree = new int[numCourses];
+    for (int[] edge : prerequisites) {
+        int from = edge[1], to = edge[0];
+        indegree[to]++;
+    }
+
+    // 根据入度初始化队列中的节点，和环检测算法相同
+    Queue<Integer> q = new LinkedList<>();
+    for (int i = 0; i < numCourses; i++) {
+        if (indegree[i] == 0) {
+            q.offer(i);
+        }
+    }
+
+    // 记录拓扑排序结果
+    int[] res = new int[numCourses];
+    // 记录遍历节点的顺序（索引）
+    int count = 0;
+    // 开始执行 BFS 算法
+    while (!q.isEmpty()) {
+        int cur = q.poll();
+        // 弹出节点的顺序即为拓扑排序结果
+        res[count] = cur;
+        count++;
+        for (int next : graph[cur]) {
+            indegree[next]--;
+            if (indegree[next] == 0) {
+                q.offer(next);
+            }
+        }
+    }
+
+    if (count != numCourses) {
+        // 存在环，拓扑排序不存在
+        return new int[]{};
+    }
+    
+    return res;
+}
+
+// 建图函数
+List<Integer>[] buildGraph(int n, int[][] edges) {
+    // ...
+}
+```
+
+这里的 BFS 算法是通过 `indegree` 数组实现的 `visited` 数组的作用，只有入度为 `0` 的节点才能入队，从而保证不会出现死循环。
 
 </br>
