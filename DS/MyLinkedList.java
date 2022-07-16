@@ -32,6 +32,17 @@ public class MyLinkedList<E> implements Iterable<E>{
         }
     }
 
+    /**
+     * 构造函数初始化头尾节点
+     */
+    public MyLinkedList() {
+        this.head = new Node<>(null);
+        this.tail = new Node<>(null);
+        head.next = tail;
+        tail.prev = head;
+        this.size = 0;
+    }
+
     // 增
 
     /**
@@ -254,17 +265,6 @@ public class MyLinkedList<E> implements Iterable<E>{
             throw new NoSuchElementException();
         }
         return tail.prev.val;
-    }
-
-    /**
-     * 构造函数初始化头尾节点
-     */
-    public MyLinkedList() {
-        this.head = new Node<>(null);
-        this.tail = new Node<>(null);
-        head.next = tail;
-        tail.prev = head;
-        this.size = 0;
     }
 
     /**
