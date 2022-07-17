@@ -60,6 +60,13 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [拓扑排序算法(DFS)](#拓扑排序算法dfs)
     - [环检测算法(BFS)](#环检测算法bfs)
     - [拓扑排序(BFS)](#拓扑排序bfs)
+  - [二分图判定](#二分图判定)
+    - [二分图简介](#二分图简介)
+    - [二分图判定思路](#二分图判定思路)
+  - [并查集(UNION-FIND)算法](#并查集union-find算法)
+    - [基本思路](#基本思路)
+    - [平衡性优化](#平衡性优化)
+    - [路径压缩](#路径压缩)
 
 </br>
 
@@ -2921,5 +2928,657 @@ List<Integer>[] buildGraph(int n, int[][] edges) {
 ```
 
 这里的 BFS 算法是通过 `indegree` 数组实现的 `visited` 数组的作用，只有入度为 `0` 的节点才能入队，从而保证不会出现死循环。
+
+</br>
+
+## 二分图判定
+
+### 二分图简介
+
+百度百科对「二分图」的定义：
+
+> 二分图的顶点集可分割为两个互不相交的子集，图中每条边依附的两个顶点都分属于这两个子集，且两个子集内的顶点不相邻。
+
+![](https://i.bmp.ovh/imgs/2022/07/17/8cff726790465c70.png)
+
+其实就是「双色问题」：用两种颜色将图中的所有顶点着色，且使得任意一条边的两个端点的颜色都不相同。
+
+这个问题就等同于二分图的判定问题，如果能够成功地将图染色，那么这幅图就是一幅二分图，反之则不是：
+
+![](https://i.bmp.ovh/imgs/2022/07/17/f70c199ad17d839d.png)
+
+二分图作为一种特殊的图模型，会被很多高级图算法（比如最大流算法）用到。二分图结构在某些场景可以更高效地存储数据。
+
+</br>
+
+### 二分图判定思路
+
+判定二分图就是用代码解决「双色问题」：**遍历一遍图，一边遍历一边染色，看看能不能用两种颜色给所有节点染色，且相邻节点的颜色都不相同。**
+
+首先可以写出图的遍历框架：
+
+```java
+boolean[] visited;
+void traverse(Graph graph, int v) {
+    if(visited[v]) {
+        return;
+    }
+    visited[v] = true;
+    for(TreeNode neighbor : graph.neighbors(v)) {
+        traverse(graph, neighbor);
+    }
+}
+```
+
+因为图中可能存在环，所以用 `visited` 数组防止死循环。
+
+也可以把判断是否走过放在其他地方：
+
+```java
+boolean[] visited;
+void traverse(Graph graph, int v) {
+    // 前序遍历位置，标记节点 v 已访问
+    visited[v] = true;
+    for (int neighbor : graph.neighbors(v)) {
+        if (!visited[neighbor]) {
+            // 只遍历没标记过的相邻节点
+            traverse(graph, neighbor);
+        }
+    }
+}
+```
+
+这种写法把对 `visited` 的判断放到递归调用之前，和之前的写法唯一的不同是需要保证调用 `traverse(v)` 的时候，`visited[v] == false`。
+
+这样就可以写出二分图判定的代码逻辑：
+
+```java
+void traverse(Graph graph, boolean[] visited, int v) {
+    visited[v] = true;
+    // 遍历节点 v 的所有相邻节点 neighbor
+    for(TreeNode neighbor : graph.neighbors(v)) {
+        if (!visited[neighbor]) {
+            // 如果没访问过，就给节点 neighbor 涂上与 v 不同的颜色
+            traverse(graph, visited, neighbor);
+        } else {
+            // 相邻节点 neighbor 已经被访问过
+            // 那么应该比较节点 neighbor 和节点 v 的颜色
+            // 若相同，则此图不是二分图
+        }
+    }
+}
+```
+
+- [785.判断二分图](Graph/785.判断二分图.java) &emsp;[🔗](https://leetcode.cn/problems/is-graph-bipartite/)
+
+![](https://i.bmp.ovh/imgs/2022/07/17/9009c2c644e1cb1e.png)
+
+可以额外使用一个 color 数组来记录每个节点的颜色：
+
+```Java
+// 记录图是否符合二分图性质
+private boolean ok = true;
+// 记录图中节点的颜色，false 和 true 代表两种不同颜色
+private boolean[] color;
+// 记录图中节点是否被访问过
+private boolean[] visited;
+
+public boolean isBipartite(int[][] graph) {
+    color = new boolean[graph.length];
+    visited = new boolean[graph.length];
+
+    // 因为图不一定是联通的，可能存在多个子图
+    // 所以要把每个节点都作为起点进行一次遍历
+    // 如果发现任何一个子图不是二分图，整幅图都不算二分图
+    for(int i = 0; i < graph.length; i++) {
+        if(!visited[i]) {
+            traverse(graph, i);
+        }
+    }
+
+    return ok;
+}
+
+private void traverse(int[][] graph, int v) {
+    if(!ok) {
+        return;
+    }
+    visited[v] = true;
+    for(int w : graph[v]) {
+        if(!visited[w]) {
+            // 相邻节点 w 没有被访问过
+            // 给节点 w 涂上和节点 v 不同的颜色
+            color[w] = !color[v];
+            // 继续遍历 w
+            traverse(graph, w);
+        } else {
+            // 相邻节点 w 已经被访问过
+            // 根据 v 和 w 的颜色判断是否是二分图
+            if(color[w] == color[v]) {
+                // 若相同，则此图不是二分图
+                ok = false;
+            }
+        }
+    }
+}
+```
+
+</br>
+
+- [886.可能的二分法](Graph/886.可能的二分法.java) &emsp;[🔗](https://leetcode.cn/problems/possible-bipartition/)
+
+![](https://i.bmp.ovh/imgs/2022/07/17/0bf7a7e4dcfa0edf.png)
+
+如果把每个人看做图中的节点，相互讨厌的关系看做图中的边，那么 `dislikes` 数组就可以构成一幅图。
+
+又因为互相讨厌的人不能放在同一组里，相当于图中的所有相邻节点都要放进两个不同的组。
+
+这就回到了「双色问题」，如果能够用两种颜色着色所有节点，且相邻节点颜色都不同，那么按照颜色把这些节点分成两组就可以了。
+
+把 `dislikes` 构造成一幅图，然后执行二分图的判定算法即可：
+
+```java
+private boolean ok = true;
+private boolean[] color;
+private boolean[] visited;
+
+public boolean possibleBipartition(int n, int[][] dislikes) {
+    // 图节点编号从 1 开始
+    color = new boolean[n + 1];
+    visited = new boolean[n + 1];
+
+    // 转化成邻接表表示图结构
+    List<Integer>[] graph = buildGraph(n, dislikes);
+
+    for(int i = 0; i <= n; i++) {
+        if(!visited[i]) {
+            traverse(graph, i);
+        }
+    }
+    return ok;
+}
+
+private List<Integer>[] buildGraph(int n, int[][] dislikes) {
+    // 图节点编号为 1...n
+    List<Integer>[] graph = new LinkedList[n + 1];
+    for (int i = 0; i <= n; i++) {
+        graph[i] = new LinkedList<>();
+    }
+    for(int[] edge : dislikes) {
+        int v = edge[1], w = edge[0];
+        graph[v].add(w);
+        graph[w].add(v);
+    }
+    return graph;
+}
+
+private void traverse(List<Integer>[] graph, int v) {
+    if(!ok) {
+        return;
+    }
+    visited[v] = true;
+    for(int w : graph[v]) {
+        if(!visited[w]) {
+            color[w] = !color[v];
+            traverse(graph, w);
+        } else {
+            if(color[w] == color[v]) {
+                ok = false;
+            }
+        }
+    }
+}
+```
+
+</br>
+
+## 并查集(UNION-FIND)算法
+
+Union-Find 算法，也就是常说的并查集（Disjoint Set）结构，主要是解决图论中「动态连通性」问题的。
+
+动态连通性其实可以抽象成给一幅图连线。比如下面这幅图，总共有 10 个节点，他们互不相连，分别用 0~9 标记：
+
+![](https://i.bmp.ovh/imgs/2022/07/17/f728d0b913a522eb.png)
+
+Union-Find 算法主要需要实现这两个 API：
+
+```java
+class UF {
+    /* 将 p 和 q 连接 */
+    public void union(int p, int q);
+    /* 判断 p 和 q 是否连通 */
+    public boolean connected(int p, int q);
+    /* 返回图中有多少个连通分量 */
+    public int count();
+}
+```
+
+这里所说的「连通」是一种等价关系，也就是说具有如下三个性质：
+
+1. 自反性：节点 `p` 和 `p` 是连通的。
+
+2. 对称性：如果节点 `p` 和 `q` 连通，那么 `q` 和 `p` 也连通。
+
+3. 传递性：如果节点 `p` 和 `q` 连通，`q` 和 `r` 连通，那么 `p` 和 `r` 也连通。
+
+比如 0～9 任意两个不同的点都不连通，调用 `connected` 都会返回 `false`，连通分量为 10 个。
+
+如果调用 `union(0, 1)`，那么 0 和 1 被连通，连通分量降为 9 个。
+
+再调用 `union(1, 2)`，这时 0, 1, 2 都被连通，调用 `connected(0, 2)` 也会返回 `true`，连通分量变为 8 个。
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/c0dc0dfc657d0867.png)
+
+判断这种「等价关系」非常实用，如编译器判断同一个变量的不同引用、社交网络中的朋友圈计算等。
+
+</br>
+
+### 基本思路 
+
+可以使用森林（若干棵树）来表示图的动态连通性，用数组来具体实现这个森林。
+
+设定树的每个节点有一个指针指向其父节点，如果是根节点的话，这个指针指向自己。如上图一开始的时候没有相互连通：
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/a63c386fe86d030e.png)
+
+```java
+class UF {
+    // 记录连通分量
+    private int count;
+    // 节点 x 的父节点是 parent[x]
+    private int[] parent;
+
+    /* 构造函数，n 为图的节点总数 */
+    public UF(int n) {
+        // 一开始互不联通
+        this.count = n;
+        // 父节点指针初始指向自己
+        parent = new int[n];
+        for(int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+}
+```
+
+**如果某两个节点被连通，则让其中的（任意）一个节点的根节点接到另一个节点的根节点上：**
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/e4470285be9e73a5.png)
+
+```java
+public void union(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    if(rootP == rootQ) {
+        return;
+    }
+    // 将两棵树合并为一棵
+    parent[rootP] = rootQ;
+    // 也可以使用 parent[rootQ] = rootP 
+    // 两个分量合二为一，连通分量减一
+    count--; 
+}
+/* 返回某个节点 x 的根节点 */
+private int find(int x) {
+    // 根节点的 parent[x] == x
+    while(parent[x] != x) {
+        x = parent[x];
+    }
+    return x;
+}
+
+/* 返回当前的连通分量个数 */
+public int count() { 
+    return count;
+}
+```
+
+这样，如果节点 `p` 和 `q` 连通的话，它们一定拥有相同的根节点：
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/84fc607aef987b2c.png)
+
+```Java
+public boolean connected(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    return rootP == rootQ;
+}
+```
+
+至此，Union-Find 算法就基本完成了。
+
+</br>
+
+### 平衡性优化
+
+这个算法的主要 API `connected` 和 `union` 中的复杂度都是 `find` 函数造成的，所以说它们的复杂度和 `find` 一样。
+
+`find` 主要功能就是从某个节点向上遍历到树根，其时间复杂度就是树的高度。我们可能习惯性地认为树的高度就是 `logN`，但这并不一定。`logN` 的高度只存在于平衡二叉树，对于一般的树可能出现极端不平衡的情况，使得「树」几乎退化成「链表」，树的高度最坏情况下可能变成 `N`。
+
+所以上面这种解法 `find` , `union` , `connected` 的时间复杂度都是 `O(N)`。
+
+因此需要考虑如何避免树的不平衡，关键在于 `union` 过程：
+
+```java
+public void union(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    if (rootP == rootQ) {
+        return;
+    }
+    parent[rootP] = rootQ;
+    count--;
+}
+```
+
+这里直接把 `p` 所在的树接到 `q` 所在的树的根节点下面，就可能出现「头重脚轻」的不平衡状况，比如下面这种局面：
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/ce502110e6817313.png)
+
+长此以往，树可能生长得很不平衡。我们希望小一些的树接到大一些的树下面，这样就能避免头重脚轻，更平衡一些。解决方法是额外使用一个 `size` 数组，记录每棵树包含的节点数，不妨称为「重量」：
+
+```java
+class UF {
+    private int count;
+    private int[] parent;
+    // 新增一个数组记录树的“重量”
+    private int[] size;
+
+    public UF(int n) {
+        this.count = n;
+        parent = new int[n];
+        // 最初每棵树只有一个节点
+        // 重量应该初始化 1
+        size = new int[n];
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+            size[i] = 1;
+        }
+    }
+    /* 其他函数 */
+}
+```
+
+如 `size[3] = 5` 表示，以节点 `3` 为根的树总共有 5 个节点。修改一下 `union` 方法：
+
+```java
+public void union(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    if (rootP == rootQ)
+        return;
+    
+    // 小树接到大树下面，较平衡
+    if (size[rootP] > size[rootQ]) {
+        parent[rootQ] = rootP;
+        size[rootP] += size[rootQ];
+    } else {
+        parent[rootP] = rootQ;
+        size[rootQ] += size[rootP];
+    }
+    count--;
+}
+```
+
+这样，通过比较树的重量，就可以保证树的生长相对平衡，树的高度大致在 `logN` 这个数量级，极大提升执行效率。
+
+此时 `find` , `union` , `connected` 的时间复杂度都下降为 `O(logN)`。
+
+</br>
+
+### 路径压缩
+
+**其实我们并不在乎每棵树的结构长什么样，只在乎根节点。**
+
+因为无论树长什么样，树上的每个节点的根节点都是相同的，所以可以进一步压缩每棵树的高度，使树高始终保持为常数。
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/6d93bfc2a8d5292c.png)
+
+这样每个节点的父节点就是整棵树的根节点，`find` 就能以 `O(1)` 的时间找到某一节点的根节点，相应的，`connected` 和 `union` 复杂度都下降为 `O(1)`。
+
+要做到这一点主要是修改 `find` 函数逻辑.
+
+第一种是在 `find` 中加一行代码：
+
+```Java
+private int find(int x) {
+    while (parent[x] != x) {
+        // 这行代码进行路径压缩
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+    }
+    return x;
+}
+```
+
+每次 while 循环都会把一对父子节点改到同一层，这样每次调用 `find` 函数向树根遍历的同时就将树高缩短了。
+
+路径压缩的第二种写法：
+
+```java
+public int find(int x) {
+    if (parent[x] != x) {
+        parent[x] = find(parent[x]);
+    }
+    return parent[x];
+}
+```
+
+翻译成迭代：
+
+```java
+public int find(int x) {
+    // 先找到根节点
+    int root = x;
+    while (parent[root] != root) {
+        root = parent[root];
+    }
+    // 然后把 x 到根节点之间的所有节点直接接到根节点下面
+    int old_parent = parent[x];
+    while (x != root) {
+        parent[x] = root;
+        x = old_parent;
+        old_parent = parent[old_parent];
+    }
+    return root;
+}
+```
+
+比起第一种路径压缩，显然这种方法压缩得更彻底，直接把一整条树枝压平。就算一些极端情况下产生了一棵比较高的树，只要一次路径压缩就能大幅降低树高，从摊还分析的角度来看，所有操作的平均时间复杂度依然是 `O(1)`。
+
+另外，如果使用路径压缩技巧，那么 size 数组的平衡优化就不是特别必要了：
+
+```java
+class UF {
+    // 连通分量个数
+    private int count;
+    // 存储每个节点的父节点
+    private int[] parent;
+
+    // n 为图中节点的个数
+    public UF(int n) {
+        this.count = n;
+        parent = new int[n];
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+    }
+    
+    // 将节点 p 和节点 q 连通
+    public void union(int p, int q) {
+        int rootP = find(p);
+        int rootQ = find(q);
+        
+        if (rootP == rootQ)
+            return;
+        
+        parent[rootQ] = rootP;
+        // 两个连通分量合并成一个连通分量
+        count--;
+    }
+
+    // 判断节点 p 和节点 q 是否连通
+    public boolean connected(int p, int q) {
+        int rootP = find(p);
+        int rootQ = find(q);
+        return rootP == rootQ;
+    }
+
+    public int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+
+    // 返回图中的连通分量个数
+    public int count() {
+        return count;
+    }
+}
+```
+
+Union-Find 算法的复杂度的分析：构造函数初始化数据结构需要 `O(N)` 的时间和空间复杂度；连通两个节点 `union`、判断两个节点的连通性 `connected`、计算连通分量 `count` 所需的时间复杂度均为 `O(1)`。
+
+优化算法的过程：
+
+1. 用 `parent` 数组记录每个节点的父节点，相当于指向父节点的指针，所以 `parent` 数组内实际存储着一个森林（若干棵多叉树）。
+
+2. 用 `size` 数组记录着每棵树的重量，目的是让 `union` 后树依然拥有平衡性，保证各个 API 时间复杂度为 `O(logN)`，而不会退化成链表影响操作效率。
+
+3. 在 `find` 函数中进行路径压缩，保证任意树的高度保持在常数，使得各个 API 时间复杂度为 `O(1)`。使用了路径压缩之后，可以不使用 size 数组的平衡优化。
+
+</br>
+
+- [323.无向图中连通分量的数目](Graph/323.无向图中连通分量的数目.java) &emsp;[🔗](https://leetcode.cn/problems/number-of-connected-components-in-an-undirected-graph/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/b74a073b1f32239f.png)
+
+可以直接使用 UF 类来解决：
+
+```java
+public int countComponents(int n, int[][] edges) {
+    UF uf = new UF(n);
+    // 将每个节点进行连通
+    for (int[] e : edges) {
+        uf.union(e[0], e[1]);
+    }
+    // 返回连通分量的个数
+    return uf.count();
+}
+
+class UF {
+    // ...
+}
+```
+
+另外，一些使用 DFS 深度优先算法解决的问题，也可以用 Union-Find 算法解决。
+
+- [130.被围绕的区域](Graph/130.被围绕的区域.java) &emsp;[🔗](https://leetcode.cn/problems/surrounded-regions/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/d9305aef676d77d3.png)
+
+必须是四面被围的 `O` 才能被换成 `X`，也就是说边角上的 `O` 一定不会被围，进一步，与边角上的 `O` 相连的 `O` 也不会被 `X` 围四面，也不会被替换。
+
+先用 for 循环遍历棋盘的四边，用 DFS 算法把那些与边界相连的 `O` 换成一个特殊字符，比如 `#`；然后再遍历整个棋盘，把剩下的 `O` 换成 `X`，把 `#` 恢复成 `O`。这样就能完成题目的要求，时间复杂度 `O(MN)`。
+
+可以把所有靠边的 `O` 和一个虚拟节点 `dummy` 进行连通：
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/55715f2b73aa74f7.png)
+
+然后再遍历整个 board，那些和 dummy 不连通的 O 就是被围绕的区域，需要被替换。
+
+Union-Find 底层用的是一维数组，构造函数需要传入这个数组的大小，而题目给的是一个二维棋盘。
+
+二维坐标 `(x,y)` 可以转换成 `x * n + y` 这个数（`m` 是棋盘的行数，`n` 是棋盘的列数）。**这是将二维坐标映射到一维的常用技巧**。
+
+其次，索引 `[0.. m*n-1]` 都是棋盘内坐标的一维映射，因此虚拟的 `dummy` 节点占据索引 `m * n`。
+
+```java
+void solve(char[][] board) {
+    if (board.length == 0) return;
+
+    int m = board.length;
+    int n = board[0].length;
+    // 给 dummy 留一个额外位置
+    UF uf = new UF(m * n + 1);
+    int dummy = m * n;
+    // 将首列和末列的 O 与 dummy 连通
+    for (int i = 0; i < m; i++) {
+        if (board[i][0] == 'O')
+            uf.union(i * n, dummy);
+        if (board[i][n - 1] == 'O')
+            uf.union(i * n + n - 1, dummy);
+    }
+    // 将首行和末行的 O 与 dummy 连通
+    for (int j = 0; j < n; j++) {
+        if (board[0][j] == 'O')
+            uf.union(j, dummy);
+        if (board[m - 1][j] == 'O')
+            uf.union(n * (m - 1) + j, dummy);
+    }
+    // 方向数组 d 是上下左右搜索的常用手法
+    int[][] d = new int[][]{{1,0}, {0,1}, {0,-1}, {-1,0}};
+    for (int i = 1; i < m - 1; i++) 
+        for (int j = 1; j < n - 1; j++) 
+            if (board[i][j] == 'O')
+                // 将此 O 与上下左右的 O 连通
+                for (int k = 0; k < 4; k++) {
+                    int x = i + d[k][0];
+                    int y = j + d[k][1];
+                    if (board[x][y] == 'O')
+                        uf.union(x * n + y, i * n + j);
+                }
+    // 所有不和 dummy 连通的 O，都要被替换
+    for (int i = 1; i < m - 1; i++) 
+        for (int j = 1; j < n - 1; j++) 
+            if (!uf.connected(dummy, i * n + j))
+                board[i][j] = 'X';
+}
+
+class UF {
+    // ...
+}
+```
+
+</br>
+
+- [990.等式方程的可满足性](Graph/990.等式方程的可满足性.java) &emsp;[🔗](https://leetcode.cn/problems/satisfiability-of-equality-equations/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/17/6c03e9cdcc2194b5.png)
+
+动态连通性其实就是一种等价关系，具有「自反性」「传递性」和「对称性」，`==` 关系也是一种等价关系，具有这些性质。所以这个问题适合使用 Union-Find 算法。
+
+核心思想是，将 `equations` 中的算式根据 `==` 和 `!=` 分成两部分，先处理 `==` 算式，使得他们通过相等关系各自关联（连通分量）；然后处理 `!=` 算式，检查不等关系是否破坏了相等关系的连通性。
+
+```java
+boolean equationsPossible(String[] equations) {
+    // 26 个英文字母
+    UF uf = new UF(26);
+    // 先让相等的字母形成连通分量
+    for (String eq : equations) {
+        if (eq.charAt(1) == '=') {
+            char x = eq.charAt(0);
+            char y = eq.charAt(3);
+            uf.union(x - 'a', y - 'a');
+        }
+    }
+    // 检查不等关系是否打破相等关系的连通性
+    for (String eq : equations) {
+        if (eq.charAt(1) == '!') {
+            char x = eq.charAt(0);
+            char y = eq.charAt(3);
+            // 如果相等关系成立，就是逻辑冲突
+            if (uf.connected(x - 'a', y - 'a'))
+                return false;
+        }
+    }
+    return true;
+}
+
+class UF {
+    // ...
+}
+```
 
 </br>
