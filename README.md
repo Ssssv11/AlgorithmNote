@@ -67,6 +67,14 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [基本思路](#基本思路)
     - [平衡性优化](#平衡性优化)
     - [路径压缩](#路径压缩)
+  - [KRUSKAL 最小生成树算法](#kruskal-最小生成树算法)
+    - [最小生成树](#最小生成树)
+    - [Union-Find 并查集算法](#union-find-并查集算法)
+    - [Kruskal 算法](#kruskal-算法)
+  - [Prim 最小生成树算法](#prim-最小生成树算法)
+    - [对比 Kruskal 算法](#对比-kruskal-算法)
+    - [切分定理](#切分定理)
+    - [Prim 算法实现](#prim-算法实现)
 
 </br>
 
@@ -3390,6 +3398,8 @@ public int find(int x) {
 
 另外，如果使用路径压缩技巧，那么 `size` 数组的平衡优化就不是特别必要了：
 
+<a id="Union-Find"></a>
+
 ```java
 class UF {
     // 连通分量个数
@@ -3588,6 +3598,474 @@ class UF {
     // ...
 }
 ```
+
+</br>
+
+## KRUSKAL 最小生成树算法
+
+### 最小生成树
+
+**「树」和「图」的根本区别：树不会包含环，图可以包含环**。
+
+一副没有环的图可以拉伸成一棵树，即树是「无环连通图」。而「生成树」就是在图中找一颗饱含图所有节点的树，即生成树是含有图中所有顶点的「无环连通子图」。
+
+一幅图可以有多种不同的生成树，如下图红色边就组成了两棵不同的生成树：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/18535749842df6e7.png)
+
+对于加权图，每条边都有权重，所以每棵生成树都有一个权重和。如上图，右侧生成树的权重和比左侧生成树的权重和小。
+
+因此「最小生成树」就是在所有可能的生成树中，权重和最小的那棵生成树。
+
+</br>
+
+### Union-Find 并查集算法
+
+图的生成树是含有其所有顶点的「无环连通子图」，最小生成树是权重和最小的生成树。而说到连通性就会想到上节的 Union-Find 并查集算法，用来高效处理图中连通分量的问题。
+
+Union-Find 算法代码实现：[#Union-Find](#Union-Find)
+
+Kruskal 算法的一个难点是保证生成树的合法性，因为在构造生成树的过程中，首先需要保证生成的是棵树（不包含环），Union-Find 算法的作用也就在此。
+
+- [261.以图判树](Graph/261.以图判树.java) &emsp;[🔗](https://leetcode.cn/problems/graph-valid-tree/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/ca072fae878171be.png)
+
+若该图包含环，则不能形成一个合法有效的树结构。而会产生环的场景：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/e66cbfae5bdca68e.png)
+
+不会产生环的场景：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/8c26352433834ce8.png)
+
+可以发现：**对于添加的这条边，如果该边的两个节点在同一连通分量里，那么添加这条边会产生环；反之，如果该边的两个节点不在同一连通分量里，则添加这条边不会产生环。**
+
+而判断两个节点是否连通（是否在同一个连通分量中）就是 Union-Find 算法的实现的，所以这道题的解法代码如下：
+
+```java
+class Solution {
+    public boolean validTree(int n, int[][] edges) {
+        // 初始化 0...n-1 共 n 个节点
+        UF uf = new UF(n);
+
+        // 遍历所有边，将组成边的两个节点进行连接
+        for(int[] edge : edges) {
+            int u = edge[1];
+            int v = edge[0];
+
+            // 若两个节点已经在同一连通分量中，会产生环
+            if(uf.connected(u, v)) {
+                return false;
+            }
+            // 这条边不会产生环，可以是树的一部分
+            uf.union(u, v);
+        }
+        // 要保证最后只形成了一棵树，即只有一个连通分量
+        return uf.count() == 1;
+    }
+}
+
+class UF {
+    // ...
+}
+```
+
+</br>
+
+### Kruskal 算法
+
+所谓最小生成树，就是图中若干边的集合（后文称这个集合为 `mst`，最小生成树的英文缩写），要保证这些边：
+
+1. 包含图中的所有节点。
+
+2. 形成的结构是树结构（即不存在环）。
+
+3. 权重和最小。
+
+有之前题目的铺垫，前两条可以很容易地利用 Union-Find 算法做到，关键在于第 3 点，如何保证得到的这棵生成树是权重和最小的。
+
+这里可以使用到贪心思路：
+
+将所有边按照权重从小到大排序，从权重最小的边开始遍历，如果这条边和 `mst` 中的其它边不会形成环，则这条边是最小生成树的一部分，将它加入 `mst` 集合；否则，这条边不是最小生成树的一部分，不把它加入 `mst` 集合。
+
+这样，最后 `mst` 集合中的边就形成了最小生成树。
+
+</br>
+
+- [1135.最低成本联通所有城市](Graph/1135.最低成本联通所有城市-kruskal.java) &emsp;[🔗](https://leetcode.cn/problems/connecting-cities-with-minimum-cost/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/033fb0b903539914.png)
+
+每座城市相当于图中的节点，连通城市的成本相当于边的权重，连通所有城市的最小成本即是最小生成树的权重之和。
+
+```java
+class Solution {
+    public int minimumCost(int n, int[][] connections) {
+        // 城市编号为 1...n，所以初始化大小为 n + 1
+        UF uf = new UF(n + 1);
+        // 对所有边按照权重从小到大排序
+        Arrays.sort(connections, (a, b) -> (a[2] - b[2]));
+        // 记录最小生成树的权重之和
+        int mst = 0;
+
+        for(int[] connection : connections) {
+            int u = connection[0];
+            int v = connection[1];
+            int weight = connection[2];
+
+            if(uf.connected(u, v)) {
+                // 若这条边会产生环，则不能加入 mst
+                continue;
+            }
+
+            // 若这条边不会产生环，则属于最小生成树
+            mst += weight;
+            uf.union(u, v);
+        }
+        // 保证所有节点都被连通
+        // 按理说 uf.count() == 1 说明所有节点被连通
+        // 但因为节点 0 没有被使用，所以 0 会额外占用一个连通分量
+        return uf.count() == 2 ? mst : -1;
+    }
+}
+
+class UF {
+    // ...
+}
+```
+
+整体思路和上一道题非常类似，可以认为树的判定算法加上按权重排序的逻辑就变成了 Kruskal 算法。
+
+</br>
+
+- [1584.连接所有点的最小费用](Graph/1584.连接所有点的最小费用-kruskal.java) &emsp;[🔗](https://leetcode.cn/problems/min-cost-to-connect-all-points/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/6c3978acf2f44ffc.png)
+
+每个点就是无向加权图中的节点，边的权重就是曼哈顿距离，连接所有点的最小费用就是最小生成树的权重和。
+
+所以解法思路就是先生成所有的边以及权重，然后对这些边执行 Kruskal 算法即可：
+
+```java
+public int minCostConnectPoints(int[][] points) {
+    int n = points.length;
+    // 生成所有边及权重
+    List<int[]> edges = new ArrayList<>();
+    for(int i = 0; i < n; i++) {
+        for(int j = i + 1; j < n; j++) {
+            int xi = points[i][0], yi = points[i][1];
+            int xj = points[j][0], yj = points[j][1];
+
+            // 用坐标点在 points 中的索引表示坐标点
+            edges.add(new int[] {
+                i, j, Math.abs(xi - xj) + Math.abs(yi - yj)
+            });
+        }
+    }
+
+    // 将边按照权重从小到大排序
+    Collections.sort(edges, (a, b) -> (a[2] - b[2]));
+
+    // Kruskal 算法
+    int mst = 0;
+    UF uf = new UF(n);
+    for(int[] edge : edges) {
+        int u = edge[0];
+        int v = edge[1];
+        int weight = edge[2];
+
+        if(uf.connected(u, v)) {
+            continue;
+        }
+
+        mst += weight;
+        uf.union(u, v);
+    }
+    return mst;
+}
+```
+
+这道题做了一个小的变通：每个坐标点是一个二元组，按理说应该用五元组表示一条带权重的边，但这样的话不便执行 Union-Find 算法；所以用 `points` 数组中的索引代表每个坐标点，这样就可以直接复用之前的 Kruskal 算法逻辑了。
+
+Kruskal 算法的复杂度分析：
+
+假设一幅图的节点个数为 `V`，边的条数为 `E`，首先需要 `O(E)` 的空间装所有边，而且 Union-Find 算法也需要 `O(V)` 的空间，所以 Kruskal 算法总的空间复杂度就是 `O(V + E`)。
+
+时间复杂度主要耗费在排序，需要 `O(ElogE)` 的时间，Union-Find 算法所有操作的复杂度都是 `O(1)`，套一个 for 循环也不过是 `O(E)`，所以总的时间复杂度为 `O(ElogE)`。
+
+</br>
+
+## Prim 最小生成树算法
+
+### 对比 Kruskal 算法
+
+图论的最小生成树问题，就是从图中找若干边形成一个边的集合 `mst`，这些边有以下特性：
+
+1. 这些边组成的是一棵树（树和图的区别在于不能包含环）。
+
+2. 这些边形成的树要包含所有节点。
+
+3. 这些边的权重之和要尽可能小。
+
+对于 Kruskal 算法，首先用到了贪心思想，来满足权重之和尽可能小的问题：
+
+先对所有边按照权重从小到大排序，从权重最小的边开始，选择合适的边加入 `mst` 集合，这样挑出来的边组成的树就是权重和最小的。
+
+其次，Kruskal 算法用到了 Union-Find 并查集算法，来保证挑选出来的这些边组成的一定是一棵「树」，而不会包含环或者形成一片「森林」：
+
+如果一条边的两个节点已经是连通的，则这条边会使树中出现环；如果最后的连通分量总数大于 1，则说明形成的是「森林」而不是一棵「树」。
+
+而对于 Prim 算法，首先也使用贪心思想来让生成树的权重尽可能小，也就是「切分定理」。
+
+其次，Prim 算法使用 BFS 算法思想 和 `visited` 布尔数组避免成环，来保证选出来的边最终形成的一定是一棵树。
+
+Prim 算法不需要事先对所有边排序，而是利用优先级队列动态实现排序的效果，所以 Prim 算法类似于 Kruskal 的动态过程。
+
+</br>
+
+### 切分定理
+
+「切分」就是将一幅图分为两个不重叠且非空的节点集合：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/5492fc440959c00f.png)
+
+红线把图中的节点分成了两个集合，就是一种「切分」，其中被红线切中的的边（标记为蓝色）叫做「横切边」。
+
+「切分定理」：
+
+**对于任意一种「切分」，其中权重最小的那条「横切边」一定是构成最小生成树的一条边**。
+
+它的证明也很容易：
+
+如果一幅加权无向图存在最小生成树，假设下图中用绿色标出来的边就是最小生成树：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/906a8d1ed6db4003.png)
+
+那么肯定可以找到若干「切分」方式，将这棵最小生成树切成两棵子树。如下面这种切分：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/c7c815f135c0f0a8.png)
+
+任选一条蓝色的「横切边」都可以将这两棵子树连接起来，构成一棵生成树。为了让最终这棵生成树的权重和最小，需要选择权重最小的那条「横切边」。这就证明了「切分定理」。
+
+根据切分定理，计算最小生成树的算法思路就可以很容易想到：
+
+既然每一次「切分」一定可以找到最小生成树中的一条边，那每次都把权重最小的「横切边」拿出来加入最小生成树，直到把构成最小生成树的所有边都切出来为止。
+
+</br>
+
+### Prim 算法实现
+
+按照「切分」的定义，只要把图中的节点切成两个不重叠且非空的节点集合即可算作一个合法的「切分」，那么只切出来一个节点也算是一个合法的「切分」，而且「横切边」就是这个节点的边。
+
+假设从 A 点开始切分：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/6fc27f6545f30cef.png)
+
+按照切分定理，「横切边」`AB`, `AF` 中权重最小的边一定是最小生成树中的一条边：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/e5f75dfe19510824.png)
+
+现在已经找到最小生成树的第一条边（边 `AB`），按照 Prim 算法的逻辑，接下来可以围绕 `A` 和 `B` 这两个节点做切分：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/06adffe6276d276f.png)
+
+然后又可以从这个切分产生的横切边（图中蓝色的边）中找出权重最小的一条边，也就又找到了最小生成树中的第二条边 `BC`：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/8615a8301d802cbf.png)
+
+接下来类似，再围绕 `A`, `B`, `C` 这三个点做切分，产生的横切边中权重最小的边是 `BD`，那么 `BD` 就是最小生成树的第三条边：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/7c109ee58a621b13.png)
+
+接下来再围绕 `A`, `B`, `C`, `D` 这四个点做切分 ……
+
+Prim 算法的逻辑就是这样，每次切分都能找到最小生成树的一条边，然后又可以进行新一轮切分，直到找到最小生成树的所有边为止。
+
+这样设计算法有一个好处，就是比较容易确定每次新的「切分」所产生的「横切边」。
+
+回顾刚才的图，当知道了节点 `A`, `B` 的所有「横切边」（不妨表示为 `cut({A, B})`），也就是图中蓝色的边：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/06adffe6276d276f.png)
+
+可以根据它快速计算出 `cut({A, B, C})`，也就是节点 `A`, `B`, `C` 的所有「横切边」:
+
+`cut({A, B, C}) = cut({A, B}) + cut({C})`
+
+而 `cut({C})` 就是节点 `C` 的所有邻边：
+
+![](https://s3.bmp.ovh/imgs/2022/07/18/a161da6f239d332e.png)
+
+因此，在进行切分的过程中只需要不断把新节点的邻边加入横切边集合，就可以得到新的切分的所有横切边。
+
+注意 `cut({A, B})` 的横切边和 `cut({C})` 的横切边中 `BC` 边重复了。可以用一个布尔数组 `inMST` 辅助防止重复计算横切边。
+
+而求横切边的目的是找权重最小的横切边，可以用一个优先级队列存储这些横切边来动态计算权重最小的横切边。
+
+明白了上诉原理就可以用代码实现 Prim 算法：
+
+```java
+class Prim {
+    // 核心数据结构，存储「横切边」的优先级队列
+    private PriorityQueue<int[]> pq;
+    // 类似 visited 数组的作用，记录已经成为最小生成树的一部分的节点
+    private boolean[] inMST;
+    // 记录最小生成树的权重和
+    private int weightSum = 0;
+    // graph 是用邻接表表示的一幅图，
+    // graph[s] 记录节点 s 所有相邻的边，
+    // 三元组 int[]{from, to, weight} 表示一条边
+    private List<int[]>[] graph;
+
+    public Prim(List<int[]>[] graph) {
+        this.graph = graph;
+        this.pq = new PriorityQueue<>((a, b) -> a[2] - b[2]);
+
+        // 图中有 n 个节点
+        int n = graph.length;
+        this.inMST = new boolean[n];
+
+        // 不妨从节点 0 开始切分
+        inMST[0] = true;
+        cut(0);
+        // 不断进行切分，向最小生成树中添加边
+        while (!pq.isEmpty()) {
+            int[] edge = pq.poll();
+            int to = edge[1];
+            int weight = edge[2];
+            if (inMST[to]) {
+                // 节点 to 已经在最小生成树中，跳过
+                // 否则这条边会产生环
+                continue;
+            }
+            // 将边 edge 加入最小生成树
+            weightSum += weight;
+            inMST[to] = true;
+            // 节点 to 加入后，进行新一轮切分，会产生更多横切边
+            cut(to);
+        }
+    }
+
+    // 将 s 的横切边加入优先队列
+    private void cut(int s) {
+        // 遍历 s 的邻边
+        for (int[] edge : graph[s]) {
+            int to = edge[1];
+            if (inMST[to]) {
+                // 相邻接点 to 已经在最小生成树中，跳过
+                // 否则这条边会产生环
+                continue;
+            }
+            // 加入横切边队列
+            pq.offer(edge);
+        }
+    }
+
+    // 最小生成树的权重和
+    public int weightSum() {
+        return weightSum;
+    }
+
+    // 判断最小生成树是否包含图中的所有节点
+    public boolean allConnected() {
+        for (int i = 0; i < inMST.length; i++) {
+            if (!inMST[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+```
+
+Kruskal 算法是在一开始的时候就把所有的边排序，然后从权重最小的边开始挑选属于最小生成树的边，组建最小生成树。
+
+Prim 算法是从一个起点的切分（一组横切边）开始执行类似 BFS 算法的逻辑，借助切分定理和优先级队列动态排序的特性，从这个起点「生长」出一棵最小生成树。
+
+Prim 算法的时间复杂度主要在优先级队列 `pq` 的操作上，由于 `pq` 里面装的是图中的「边」，假设一幅图边的条数为 `E`，那么最多操作 `O(E)` 次 `pq`。每次操作优先级队列的时间复杂度取决于队列中的元素个数，取最坏情况就是 `O(logE)`。
+
+所以这种 Prim 算法实现的总时间复杂度是 `O(ElogE)`。Kruskal 算法，它的时间复杂度主要是给所有边按照权重排序，也是 `O(ElogE)`。
+
+</br>
+
+- [1135.最低成本联通所有城市](Graph/1135.最低成本联通所有城市-prim.java) &emsp;[🔗](https://leetcode.cn/problems/connecting-cities-with-minimum-cost/)
+
+每座城市相当于图中的节点，连通城市的成本相当于边的权重，连通所有城市的最小成本即是最小生成树的权重之和。
+
+先把题目输入的 `connections` 转化成邻接表形式，然后输入给之前实现的 Prim 算法类即可：
+
+```java
+public int minimumCost(int n, int[][] connections) {
+    List<int[]>[] graph = buildGraph(n, connections);
+    Prim prim = new Prim(graph);
+    if(!prim.allConnected()) {
+        return -1;
+    }
+    return prim.weightSum();
+}
+
+List<int[]>[] buildGraph(int n, int[][] connections) {
+    List<int[]>[] graph = new LinkedList[n];
+    for(int i = 0; i < n; i++) {
+        graph[i] = new LinkedList<>();
+    }
+    for(int[] conn : connections) {
+        // 题目给的节点编号从 1 开始
+        // 但实现的 Prim 算法需要从 0 开始编号
+        int u = conn[0] - 1;
+        int v = conn[1] - 1;
+        int weight = conn[2];
+
+        graph[u].add(new int[]{u, v, weight});
+        graph[v].add(new int[]{v, u, weight});
+    }
+    return graph;
+}
+```
+
+关于 `buildGraph` 函数需要注意两点：
+
+1. 题目给的节点编号是从 1 开始的，所以做一下索引偏移，转化成从 0 开始以便 `Prim` 类使用；
+
+2. 如何用邻接表表示无向加权图，「无向图」其实就可以理解为「双向图」。
+
+这样转化出来的 `graph` 形式就和之前的 `Prim` 算法类对应了，可以直接使用 `Prim` 算法计算最小生成树。
+
+</br>
+
+- [1584.连接所有点的最小费用](Graph/1584.连接所有点的最小费用-prim.java) &emsp;[🔗](https://leetcode.cn/problems/min-cost-to-connect-all-points/)
+
+每个点就是无向加权图中的节点，边的权重就是曼哈顿距离，连接所有点的最小费用就是最小生成树的权重和。
+
+所以只需要把 `points` 数组转化成邻接表的形式，即可复用之前实现的 `Prim` 算法类：
+
+```java
+public int minCostConnectPoints(int[][] points) {
+    int n = points.length;
+    List<int[]>[] graph = buildGraph(n, points);
+    return new Prim(graph).weightSum();
+}
+
+private List<int[]>[] buildGraph(int n, int[][] points) {
+    List<int[]>[] graph = new LinkedList[n];
+    for (int i = 0; i < n; i++) {
+        graph[i] = new LinkedList<>();
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            int xi = points[i][0], yi = points[i][1];
+            int xj = points[j][0], yj = points[j][1];
+            int weight = Math.abs(xi - xj) + Math.abs(yi - yj);
+
+            graph[i].add(new int[]{i, j, weight});
+            graph[j].add(new int[]{j, i, weight});
+        }
+    }
+    return graph;
+}
+```
+
+用 `points` 数组中的索引代表每个坐标点，这样就可以直接复用之前的 `Prim` 算法逻辑了。
 
 </br>
 
