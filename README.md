@@ -67,7 +67,7 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [基本思路](#基本思路)
     - [平衡性优化](#平衡性优化)
     - [路径压缩](#路径压缩)
-  - [KRUSKAL 最小生成树算法](#kruskal-最小生成树算法)
+  - [Kruskal 最小生成树算法](#kruskal-最小生成树算法)
     - [最小生成树](#最小生成树)
     - [Union-Find 并查集算法](#union-find-并查集算法)
     - [Kruskal 算法](#kruskal-算法)
@@ -3601,7 +3601,7 @@ class UF {
 
 </br>
 
-## KRUSKAL 最小生成树算法
+## Kruskal 最小生成树算法
 
 ### 最小生成树
 
