@@ -4179,7 +4179,7 @@ public int minDepth(TreeNode root) {
 
 其他复杂问题都是这个框架的变形，用 BFS 找最短距离的好处就是 `depth` 每增加一次，队列中的所有节点都向前迈一步，这保证了第一次到达终点的时候，走的步数是最少的。而 DFS 要找到最短路径需要把所有节点都走完才能对比出最短路径。
 
-一般来说在找最短路径的时候使用 BFS，其他时候还是 DFS 使用得多
+一般来说在找最短路径的时候使用 BFS，其他时候还是 DFS 使用得多。
 
 </br>
 
@@ -4552,4 +4552,470 @@ void levelTraverse(TreeNode root) {
 </br>
 
 ### Dijkstra 算法框架
+
+```java
+// 输入一幅图和一个起点 start，计算 start 到其他节点的最短距离
+int[] dijkstra(int start, List<Integer>[] graph);
+```
+
+输入一幅图 `graph` 和一个起点 `start`，返回一个记录最短路径权重的数组。
+
+标准的 Dijkstra 算法会把从起点 `start` 到所有其他节点的最短路径都算出来，如输入起点 `start = 3`，函数返回一个 `int[]` 数组，假设赋值给 `distTo` 变量，那么从起点 `3` 到节点 `6` 的最短路径权重的值就是 `distTo[6]`。
+
+类似二叉树的层序遍历，这里也需要用 `State` 类记录一些额外信息，也就是使用 `distFromStart` 变量记录从起点 `start` 到当前这个节点的距离：
+
+```java
+class State {
+    // 图节点的 id
+    int id;
+    // 从 start 节点到当前节点的距离
+    int distFromStart;
+
+    State(int id, int distFromStart) {
+        this.id = id;
+        this.distFromStart = distFromStart;
+    }
+}
+```
+
+普通 BFS 算法中，根据 BFS 的逻辑和无权图的特点，第一次遇到某个节点所走的步数就是最短距离，所以用一个 `visited` 数组防止走回头路，每个节点只会经过一次。
+
+加权图中的 Dijkstra 算法和无权图中的普通 BFS 算法不同，在 Dijkstra 算法中，第一次经过某个节点时的路径权重不一定就是最小的，所以对于同一个节点可能会经过多次，而且每次的 `distFromStart` 可能都不一样，比如下图：
+
+![](https://s3.bmp.ovh/imgs/2022/07/19/817c4fb6b00ff29e.png)
+
+会经过节点 `5` 三次，每次的 `distFromStart` 值都不一样。那么取 `distFromStart` 最小的那次就是从起点 `start` 到节点 `5` 的最短路径权重。
+
+这样就可以写出 Dijkstra 算法框架了，Dijkstra 可以理解成一个带 dp table（或备忘录）的 BFS 算法，伪码如下：
+
+```java
+// 返回节点 from 到节点 to 之间的边的权重
+int weight(int from, int to);
+
+// 输入节点 s 返回 s 的相邻节点
+List<Integer> adj(int s);
+
+// 输入一幅图和一个起点 start，计算 start 到其他节点的最短距离
+int[] dijkstra(int start, List<Integer>[] graph) {
+    // 图中节点的个数
+    int V = graph.length;
+
+    // 记录最短路径的权重，你可以理解为 dp table
+    // 定义：distTo[i] 的值就是节点 start 到达节点 i 的最短路径权重
+    int[] distTo = new int[V];
+
+    // 求最小值，所以 dp table 初始化为正无穷
+    Arrays.fill(distTo, Integer.MAX_VALUE);
+
+    // base case，start 到 start 的最短距离就是 0
+    distTo[start] = 0;
+
+    // 优先级队列，distFromStart 较小的排在前面
+    Queue<State> pq = new PriorityQueue<>((a, b) -> a.distFromStart - b.distFromStart);
+
+    // 从起点 start 开始进行 BFS
+    pq.offer(new State(start, 0));
+
+    while(!pq.isEmpty()) {
+        State curState = pq.poll();
+        int curDistFromStart = curState.distFromStart;
+
+        if(curDistFromStart > distTo[curNodeID]) {
+            // 已经有一条更短的路径到达 curNode 节点了
+            continue;
+        }
+
+        // 将 curNode 的相邻节点装入队列
+        for(int nextNodeID : adj(curNodeID)) {
+            // 判断从 curNode 到 nextNode 的距离是否会更短
+            int distToNextNode = distTo[curNodeID] + weight(curNodeID, nextNodeID);
+            if(distTo[nextNodeID] > distToNextNode) {
+                // 更新 dp table
+                distTo[nextNodeID] = distToNextNode;
+                // 将这个节点以及距离放入队列
+                pq.offer(new State(nextNodeID, distToNextNode));
+            }
+        }
+    }
+    return distTo;
+}
+```
+
+对比普通的 BFS 算法：
+
+1. 没有 `visited` 集合记录已访问的节点，所以一个节点会被访问多次，会被多次加入队列，那会不会导致队列永远不为空，造成死循环？
+
+2. 为什么用优先级队列 `PriorityQueue` 而不是 `LinkedList` 实现的普通队列？为什么要按照 `distFromStart` 的值来排序？
+
+3. 如果我只想计算起点 `start` 到某一个终点 `end` 的最短路径，是否可以修改算法，提升一些效率？
+
+首先，这个算法不用 `visited` 集合也不会死循环。循环结束的条件是队列为空，那么就要注意看什么时候往队列里放元素（调用 `offer` 方法），再注意看什么时候从队列往外拿元素（调用 `poll` 方法）。
+
+while 循环每执行一次，都会往外拿一个元素，但想往队列里放元素就有很多限制，必须满足下面这个条件：
+
+```java
+// 判断从 curNode 到 nextNode 的距离是否会更短
+if (distTo[nextNodeID] > distToNextNode) {
+    // 更新 dp table
+    distTo[nextNodeID] = distToNextNode;
+    pq.offer(new State(nextNodeID, distToNextNode));
+}
+```
+
+这个算法逻辑就是在不断的最小化 `distTo` 数组中的元素，因此 `distTo` 数组可以理解成熟悉的 `dp table`。如果能让到达 `nextNodeID` 的距离更短，就更新 `distTo[nextNodeID]` 的值，让其入队，否则不让入队。
+
+因为两个节点之间的最短距离（路径权重）肯定是一个确定的值，不可能无限减小下去，所以队列一定会空。队列空了之后，`distTo` 数组中记录的就是从 `start` 到其他节点的最短距离。
+
+对于第 2 点，如果要用普通队列，可以直接把 `PriorityQueue` 改成 `LinkedList`，也能得到正确答案但是效率会低很多。
+
+Dijkstra 算法使用优先级队列，主要是为了效率上的优化，类似一种贪心算法的思路，计算从起点 `start` 到终点 `end` 的最短路径权重：
+
+![](https://s3.bmp.ovh/imgs/2022/07/19/552858884eac2cba.png)
+
+假设当前只遍历了图中的这几个节点，那么你下一步准备遍历的节点显然是橙色路径的可能性更大，所以我们希望节点 `2` 排在队列靠前的位置，优先被拿出来向后遍历。
+
+所以我们使用 `PriorityQueue` 作为队列，让 `distFromStart` 的值较小的节点排在前面，这就类似贪心算法的贪心思路，可以很大程度上优化算法的效率。
+
+对于第 3 点，如果只关心起点 `start` 到某一个终点 `end` 的最短路径，只需要稍微修改：
+
+```java
+// 输入起点 start 和终点 end，计算起点到终点的最短距离
+int dijkstra(int start, int end, List<Integer>[] graph) {
+
+    // ...
+
+    while (!pq.isEmpty()) {
+        State curState = pq.poll();
+        int curNodeID = curState.id;
+        int curDistFromStart = curState.distFromStart;
+
+        // 在这里加一个判断，其他代码不用改
+        if (curNodeID == end) {
+            return curDistFromStart;
+        }
+
+        if (curDistFromStart > distTo[curNodeID]) {
+            continue;
+        }
+
+        // ...
+    }
+
+    // 如果运行到这里，说明从 start 无法走到 end
+    return Integer.MAX_VALUE;
+}
+```
+
+因为优先级队列自动排序的性质，每次从队列里面拿出来的都是 `distFromStart` 值最小的，所以当第一次从队列中拿出终点 `end` 时，此时的 `distFromStart` 对应的值就是从 `start` 到 `end` 的最短距离。
+
+这个算法较之前的实现提前 `return` 了，所以效率有一定的提高。
+
+</br>
+
+- [743.网络延迟时间](Graph/743.网络延迟时间.java) &emsp;[🔗](https://leetcode.cn/problems/network-delay-time/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/19/38ef0b9e0e99c0e7.png)
+
+求所有节点都收到信号的时间，把传递时间看做距离，实际上就是问「从节点 `k` 到其他所有节点的最短路径中，最长的那条最短路径距离是多少」，也就是计算从节点 `k` 出发到其他所有节点的最短路径，就是标准的 Dijkstra 算法。
+
+根据之前 Dijkstra 算法的框架可以写出下面代码：
+
+```java
+public int networkDelayTime(int[][] times, int n, int k) {
+    // 节点编号是从 1 开始的，所以要一个大小为 n + 1 的邻接表
+    List<int[]>[] graph = new LinkedList[n+1];
+    for (int i = 1; i <= n; i++) {
+        graph[i] = new LinkedList<>();   
+    }
+
+    // 构造图
+    for(int [] edge : times) {
+        int from = edge[0];
+        int to = edge[1];
+        int weight = edge[2];
+
+        // from -> List<(to, weight)>
+        // 邻接表存储图结构，同时存储权重信息
+        graph[from].add(new int[] {to, weight});
+    }
+    // 使用 dijkstra 算法计算以节点 k 为起点到其他节点的最短路径
+    int[] distTo = dijkstra(k, graph);
+
+    // 找到最长的那一条最短路径
+    int res = 0;
+    for(int i = 0; i < distTo.length; i++) {
+        if(distTo[i] == Integer.MAX_VALUE) {
+            // 有节点不可达，返回 -1
+            return -1;
+        }
+        res = Math.max(res, distTo[i]);
+    }
+    return res;
+}
+
+// 输入一个起点 start，计算从 start 到其他节点的最短距离
+private int[] dijkstra(int start, List<int[]>[] graph) {
+
+}
+```
+
+上述代码首先利用题目输入的数据转化成邻接表表示一幅图，接下来可以直接套用 Dijkstra 算法的框架：
+
+```java
+// 输入一个起点 start，计算从 start 到其他节点的最短距离
+private int[] dijkstra(int start, List<int[]>[] graph) {
+// 定义：distTo[i] 的值就是起点 start 到达节点 i 的最短路径权重
+int[] distTo = new int[graph.length];
+Arrays.fill(distTo, Integer.MAX_VALUE);
+
+// base case，start 到 start 的最短距离就是 0
+distTo[start] = 0;
+
+// 优先级队列，distFromStart 较小的排在前面
+Queue<State> pq = new PriorityQueue<>((a, b) -> a.distFromStart - b.distFromStart);
+
+// 从起点 start 开始进行 BFS
+pq.offer(new State(start, 0));
+
+while(!pq.isEmpty()) {
+    State curState = pq.poll();
+    int curNodeID = curState.id;
+    int curDistFromStart = curState.distFromStart;
+
+    if(curDistFromStart > distTo[curNodeID]) {
+        continue;
+    }
+
+    // 将 curNode 的相邻节点装入队列
+    for(int[] neighbor : graph[curNodeID]) {
+        int nextNodeID = neighbor[0];
+        int distToNextNode = distTo[curNodeID] + neighbor[1];
+
+        // 更新 dp table
+        if(distTo[nextNodeID] > distToNextNode) {
+            distTo[nextNodeID] = distToNextNode;
+            pq.offer(new State(nextNodeID, distToNextNode));
+        }
+    }
+}
+return distTo;
+}
+```
+
+</br>
+
+- [1631.最小体力消耗路径](Graph/1631.最小体力消耗路径.java) &emsp;[🔗](https://leetcode.cn/problems/path-with-minimum-effort)
+
+![](https://s3.bmp.ovh/imgs/2022/07/19/5d94ff12b40ae024.png)
+
+如果把二维数组中每个 `(x, y)` 坐标看做一个节点，它上下左右的坐标就是相邻节点，它对应的值和相邻坐标对应的值之差的绝对值就是题目说的「体力消耗」，可以理解为边的权重。
+
+这样，就在让求以左上角坐标为起点，以右下角坐标为终点，起点到终点的最短路径，Dijkstra 算法可以做到。**不过，这道题中评判一条路径是长还是短的标准不再是路径经过的权重总和，而是路径经过的权重最大值**。
+
+二维矩阵抽象成图，先实现图的 `adj` 方法：
+
+```java
+// 方向数组，上下左右的坐标偏移量
+int[][] dirs = new int[][] {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+
+// 返回坐标 (x, y) 的上下左右相邻坐标
+List<int[]> adj(int[][] matrix, int x, int y) {
+int m = matrix.length, n = matrix[0].length;
+
+// 存储相邻节点
+List<int[]> neighbors = new ArrayList<>();
+for(int[] dir : dirs) {
+    int nextX = x + dir[0];
+    int nextY = y + dir[1];
+
+    if(nextX >= m || nextX < 0 || nextY >= n || nextY < 0) {
+        // 索引越界
+        continue;
+    }
+    neighbors.add(new int[]{nextX, nextY});
+}
+return neighbors;
+}
+```
+
+类似的，现在认为一个二维坐标 `(x, y)` 是图中的一个节点，所以 `State` 类也需要修改：
+
+```java
+class State {
+// 矩阵中的一个位置
+int x, y;
+
+// 从起点 (0, 0) 到当前位置的最小体力消耗（距离）
+int effortFromStart;
+
+State(int x, int y, int effortFromStart) {
+    this.x = x;
+    this.y = y;
+    this.effortFromStart = effortFromStart;
+}
+}
+```
+
+这样就可以使用 Dijkstra 算法框架了：
+
+```java
+// Dijkstra 算法，计算 (0, 0) 到 (m - 1, n - 1) 的最小体力消耗
+public int minimumEffortPath(int[][] heights) {
+    int m = heights.length, n =heights[0].length;
+    // 定义：从 (0, 0) 到 (i, j) 的最小体力消耗是 effortTo[i][j]
+    int[][] effortTo = new int[m][n];
+
+    // dp table 初始化为正无穷
+    for(int i = 0; i < m; i++) {
+        Arrays.fill(effortTo[i], Integer.MAX_VALUE);
+    }
+
+    // base case，起点到起点的最小消耗就是 0
+    effortTo[0][0] = 0;
+
+    // 优先级队列，effortFromStart 较小的排在前面
+    Queue<State> pq = new PriorityQueue<>((a, b) -> a.effortFromStart - b.effortFromStart);
+
+    // 从起点 (0, 0) 开始进行 BFS
+    pq.offer(new State(0, 0, 0));
+
+    while(!pq.isEmpty()) {
+        State curState = pq.poll();
+        int curX = curState.x;
+        int curY = curState.y;
+        int curEffortFromStart = curState.effortFromStart;
+
+        // 到达终点提前结束
+        if(curX == m - 1 && curY == n - 1) {
+            return curEffortFromStart;
+        }
+
+        if(curEffortFromStart > effortTo[curX][curY]) {
+            continue;
+        }
+
+        // 将 (curX, curY) 的相邻坐标装入队列
+        for(int[] neighbor : adj(heights, curX, curY)) {
+            int nextX = neighbor[0];
+            int nextY = neighbor[1];
+
+            // 计算从 (curX, curY) 达到 (nextX, nextY) 的消耗
+            int effortToNextNode = Math.max(effortTo[curX][curY], 
+            Math.abs(heights[curX][curY] - heights[nextX][nextY]));
+
+            // 更新 dp table
+            if(effortTo[nextX][nextY] > effortToNextNode) {
+                effortTo[nextX][nextY] = effortToNextNode;
+                pq.offer(new State(nextX, nextY, effortToNextNode));
+            }
+        }
+    }
+    return -1;
+}
+```
+
+</br>
+
+- [1514.概率最大的路径](Graph/1514.概率最大的路径.java) &emsp;[🔗](https://leetcode.cn/problems/path-with-maximum-probability/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/19/202b6128a20a118e.png)
+
+这道题给的是无向图，而无向图本质上可以认为是「双向图」，从而转化成有向图。 Dijkstra 和很多最优化算法一样，计算的是「最优值」，这个最优值可能是最大值，也可能是最小值。标准 Dijkstra 算法是计算最短路径的，Dijkstra 算法不允许存在负权重边是因为 Dijkstra 计算最短路径的正确性依赖一个前提：路径中每增加一条边，路径的总权重就会增加。
+
+所以如果想计算最长路径，路径中每增加一条边，路径的总权重就会减少，要是能够满足这个条件，也可以用 Dijkstra 算法。而这道题边和边之间是乘法关系，每条边的概率都是小于 1 的，所以肯定会越乘越小。
+
+不过，这道题的解法要把优先级队列的排序顺序反过来，一些 if 大小判断也要反过来：
+
+```java
+double maxProbability(int n, int[][] edges, double[] succProb, int start, int end) {
+    List<double[]>[] graph = new LinkedList[n];
+    for(int i = 0; i < n; i++) {
+        graph[i] = new LinkedList<>();
+    }
+
+    // 构造无向图
+    for(int i = 0; i < edges.length; i++) {
+        int from = edges[i][0];
+        int to = edges[i][1];
+        double weight = succProb[i];
+
+        // 双向图
+        graph[from].add(new double[]{(double)to, weight});
+        graph[to].add(new double[]{(double)from, weight});
+    }
+    return dijkstra(start, end, graph);
+}
+
+double dijkstra(int start, int end, List<double[]>[] graph) {
+    // 定义：probTo[i] 的值就是节点 start 到达节点 i 的最大概率
+    double[] probTo = new double[graph.length];
+
+    // dp table 初始化为一个取不到的最小值
+    Arrays.fill(probTo, -1);
+
+    // base case，start 到 start 的概率就是 1
+    probTo[start] = 1;
+
+     // 优先级队列，probFromStart 较大的排在前面
+    Queue<State> pq = new PriorityQueue<>((a, b) -> {
+        return Double.compare(b.probFromStart, a.probFromStart);
+    });
+
+    // 从起点 start 开始进行 BFS
+    pq.offer(new State(start, 1));
+
+    while(!pq.isEmpty()) {
+        State curState = pq.poll();
+        int curNodeID = curState.id;
+        double curProbFromStart = curState.probFromStart;
+
+        // 遇到终点提前返回
+        if (curNodeID == end) {
+            return curProbFromStart;
+        }
+        
+        if (curProbFromStart < probTo[curNodeID]) {
+            // 已经有一条概率更大的路径到达 curNode 节点了
+            continue;
+        }
+        // 将 curNode 的相邻节点装入队列
+        for (double[] neighbor : graph[curNodeID]) {
+            int nextNodeID = (int)neighbor[0];
+            // 判断从 curNode 到 nextNode 的概率是否会更大
+            double probToNextNode = probTo[curNodeID] * neighbor[1];
+            if (probTo[nextNodeID] < probToNextNode) {
+                probTo[nextNodeID] = probToNextNode;
+                pq.offer(new State(nextNodeID, probToNextNode));
+            }
+        }
+    }
+    // 如果到达这里，说明从 start 开始无法到达 end，返回 0
+    return 0.0;
+}
+
+class State {
+    // 图节点的 id
+    int id;
+    // 从 start 节点到达当前节点的概率
+    double probFromStart;
+
+    State(int id, double probFromStart) {
+        this.id = id;
+        this.probFromStart = probFromStart;
+    }
+}
+```
+
+</br>
+
+
+
+
+
+
+
+
+
+
+
 
