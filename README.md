@@ -83,6 +83,7 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
 - [数据结构](#数据结构)
   - [LRU 算法](#lru-算法)
   - [LFU 算法](#lfu-算法)
+  - [设计朋友圈时间线](#设计朋友圈时间线)
 
 </br>
 
@@ -5533,3 +5534,277 @@ private void increaseFreq(int key) {
 这样就实现了 LFU 算法。
 
 </br>
+
+## 设计朋友圈时间线
+
+- [355.设计推特](DS/355.设计推特.java) &emsp;[🔗](https://leetcode.cn/problems/design-twitter/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/20/c437418baee0ab8d.png)
+
+Twitter 和微博功能差不多，主要要实现这样几个 API：
+
+```Java
+class Twitter {
+
+    /** user 发表一条 tweet 动态 */
+    public void postTweet(int userId, int tweetId) {}
+    
+    /** 返回该 user 关注的人（包括他自己）最近的动态 id，
+    最多 10 条，而且这些动态必须按从新到旧的时间线顺序排列。*/
+    public List<Integer> getNewsFeed(int userId) {}
+    
+    /** follower 关注 followee，如果 Id 不存在则新建 */
+    public void follow(int followerId, int followeeId) {}
+    
+    /** follower 取关 followee，如果 Id 不存在则什么都不做 */
+    public void unfollow(int followerId, int followeeId) {}
+}
+```
+
+题目示例解释：
+
+```java
+Twitter twitter = new Twitter();
+
+twitter.postTweet(1, 5);
+// 用户 1 发送了一条新推文 5
+
+twitter.getNewsFeed(1);
+// return [5]，因为自己是关注自己的
+
+twitter.follow(1, 2);
+// 用户 1 关注了用户 2
+
+twitter.postTweet(2, 6);
+// 用户 2 发送了一个新推文 (id = 6)
+
+twitter.getNewsFeed(1);
+// return [6, 5]
+// 解释：用户 1 关注了自己和用户 2，所以返回他们的最近推文
+// 而且 6 必须在 5 之前，因为 6 是最近发送的
+
+twitter.unfollow(1, 2);
+// 用户 1 取消关注了用户 2
+
+twitter.getNewsFeed(1);
+// return [5]
+```
+
+这几个 API 中最核心的功能难点是 `getNewsFeed`，返回的结果必须在时间上有序，但用户的关注是动态变化的。
+
+如果把每个用户各自的推文存储在链表里，每个链表节点存储文章 `id` 和一个时间戳 `time`（记录发帖时间以便比较），且这个链表是按 `time` 有序的，那么如果某个用户关注了 `k` 个用户，就可以用合并 `k` 个有序链表的算法合并出有序的推文列表，正确地 `getNewsFeed`。
+
+根据分析，需要一个 `User` 类储存 `user` 信息，还需要一个 `Tweet` 类储存推文信息，并且要作为链表的节点。所以先搭建整体框架：
+
+```java
+class Twitter {
+    private static int timestamp = 0;
+    private static class Tweet {}
+    private static class User {}
+
+    /* API */
+    public void postTweet(int userId, int tweetId) {}
+    public List<Integer> getNewsFeed(int userId) {}
+    public void follow(int followerId, int followeeId) {}
+    public void unfollow(int followerId, int followeeId) {}
+}
+```
+
+之所以要把 `Tweet` 和 `User` 类放到 `Twitter` 类里面，是因为 `Tweet` 类必须要用到一个全局时间戳 `timestamp`，而 `User` 类又需要用到 `Tweet` 类记录用户发送的推文，所以它们都作为内部类。
+
+</br>
+
+1. Tweet 类的实现
+
+每个 `Tweet` 实例需要记录自己的 `tweetId` 和发表时间 `time`，且作为链表节点，要有一个指向下一个节点的 `next` 指针。
+
+```java
+class Tweet {
+    private int id;
+    private int time;
+    private Tweet next;
+
+    // 需要传入推文内容（id）和发文时间
+    public Tweet(int id, int time) {
+        this.id = id;
+        this.time = time;
+        this.next = null;
+    }
+}
+```
+
+![](https://s3.bmp.ovh/imgs/2022/07/20/1bf101ef2c1d3ccb.png)
+
+</br>
+
+2. User 类的实现
+
+一个用户需要存储的信息有 `userId`，关注列表，以及该用户发过的推文列表。其中关注列表应该用集合（HashSet）这种数据结构来存，因为不能重复，而且需要快速查找；推文列表应该由链表这种数据结构储存，以便于进行有序合并的操作：
+
+![](https://s3.bmp.ovh/imgs/2022/07/20/31932608faf0d171.png)
+
+除此之外，根据面向对象的设计原则，「关注」「取关」和「发文」应该是 `User` 的行为，而且关注列表和推文列表也存储在 `User` 类中，所以也应该给 `User` 添加 `follow`、`unfollow` 和 `post` 方法：
+
+```java
+// static int timestamp = 0
+class User {
+    private int id;
+    public Set<Integer> followed;
+    // 用户发表的推文链表头结点
+    public Tweet head;
+
+    public User(int id) {
+        followed = new HashSet<>();
+        this.id = id;
+        this.head = null;
+
+        // 关注自己
+        follow(id);
+    }
+
+    public void follow(int userId) {
+        followed.add(userId);
+    }
+
+    public void unfollow(int userId) {
+        // 不能取关自己
+        if(userId != this.id) {
+            followed.remove(userId);
+        }
+    }
+
+    public void post(int tweetId) {
+        Tweet tweet = new Tweet(tweetId, timestamp);
+        timestamp++;
+
+        // 将新建的推文插入链表头
+        // 越靠前的推文 time 值越大
+        tweet.next = head;
+        head = tweet;
+    }
+}
+```
+
+</br>
+
+3. API 实现
+
+```java
+class Twitter {
+    private static int timestamp = 0;
+    private static class Tweet {...}
+    private static class User {...}
+
+    // 需要一个映射将 userId 和 User 对象对应起来
+    private HashMap<Integer, User> userMap = new HashMap<>();
+
+    /** user 发表一条 tweet 动态 */
+    public void postTweet(int userId, int tweetId) {
+        // 若 userId 不存在，则新建
+        if(!userMap.containsKey(userId)) {
+            userMap.put(userId, new User(userId));
+        }
+        User u = userMap.get(userId);
+        u.post(tweetId);
+    }
+
+    /** follower 关注 followee */
+    public void follow(int followerId, int followeeId) {
+        // 若 follower 不存在，则新建
+        if(!userMap.containsKey(followerId)) {
+            User u = new User(followerId);
+            userMap.put(followerId, u);
+        }
+        // 若 followee 不存在，则新建
+        if(!userMap.containsKey(followeeId)) {
+            User u = new User(followeeId);
+            userMap.put(followeeId, u);
+        }   
+        userMap.get(followerId).follow(followeeId); 
+    }
+
+     /** follower 取关 followee，如果 Id 不存在则什么都不做 */
+     public void unfollow(int followerId, int followeeId) {
+        if(userMap.containsKey(followeeId)) {
+            User follower = userMap.get(followeeId);
+            follower.unfollow(followeeId);
+        }
+     }
+
+     /** 返回该 user 关注的人（包括他自己）最近的动态 id，
+    最多 10 条，而且这些动态必须按从新到旧的时间线顺序排列。*/
+    public List<Integer> getNewsFeed(int userId) {
+        // 见下文
+    }
+}
+```
+
+</br>
+
+4. getNewsFeed 算法实现
+
+实现合并 k 个有序链表的算法需要用到优先级队列（PriorityQueue），这种数据结构是「二叉堆」最重要的应用，可以理解为它可以对插入的元素自动排序。乱序的元素插入其中就被放到了正确的位置，可以按照从小到大（或从大到小）有序地取出元素。
+
+```python
+PriorityQueue pq
+# 乱序插入
+for i in {2,4,1,9,6}:
+    pq.add(i)
+while pq not empty:
+    # 每次取出第一个（最小）元素
+    print(pq.pop())
+
+# 输出有序：1,2,4,6,9
+```
+
+把优先级队列设为按 `time` 属性从大到小降序排列，因为 `time` 越大意味着时间越近，应该排在前面：
+
+```java
+public List<Integer> getNewsFeed(int userId) {
+    List<Integer> res = new ArrayList<>();
+    if(!userMap.containsKey(userId)) {
+        return res;
+    }
+
+    // 关注列表的用户 Id
+    Set<Integer> users = userMap.get(userId).followed;
+
+    // 自动通过 time 属性从大到小排序，容量为 users 的大小
+    PriorityQueue<Tweet> pq = new PriorityQueue<>(user.size(), (a, b) -> b.time - a.time);
+
+    // 先将所有链表头节点插入优先级队列
+    for(int id : users) {
+        Tweet tweet = userMap.get(id).head;
+        if(tweet == null) {
+            continue;
+        }
+        pq.add(tweet);
+    }
+
+    while(!pq.isEmpty()) {
+        // 最多返回 10 条
+        if(res.size() == 10) {
+            break;
+        }
+
+        // 弹出 time 值最大的（最近发表的）
+        Tweet tweet = pq.poll();
+        res.add(tweet.id);
+
+        // 将下一篇 Tweet 插入进行排序
+        if(tweet.next != null) {
+            pq.add(tweet.next);
+        }
+    }
+    return res;
+}
+```
+
+过程假设有三个 `Tweet` 链表按 `time` 属性降序排列，把它们降序合并添加到 `res` 中。注意图中链表节点中的数字是 `time` 属性，不是 `id` 属性：
+
+![](https://labuladong.github.io/algo/images/%e8%ae%be%e8%ae%a1Twitter/merge.gif)
+
+至此，这道一个极其简化的 Twitter 时间线功能就设计完毕了。
+
+</br>
+
