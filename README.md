@@ -90,6 +90,10 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
   - [单调栈结构](#单调栈结构)
     - [单调栈模版](#单调栈模版)
     - [处理环形数组](#处理环形数组)
+  - [单调队列](#单调队列)
+    - [搭建解题框架](#搭建解题框架)
+    - [实现单调队列数据结构](#实现单调队列数据结构)
+    - [单调队列的通用实现](#单调队列的通用实现)
 
 </br>
 
@@ -7022,6 +7026,420 @@ public int[] nextGreaterElements(int[] nums) {
     }
     return res;
 }
+```
+
+</br>
+
+## 单调队列
+
+单调队列主要是解决下面场景：
+
+给一个数组 `window`，已知其最值为 `A`，如果给 `window` 中添加一个数 `B`，那么比较一下 `A` 和 `B` 就可以立即算出新的最值；但如果要从 `window` 数组中减少一个数，就不能直接得到最值了，因为如果减少的这个数恰好是 `A`，就需要遍历 `window` 中的所有元素重新寻找新的最值。
+
+如果单纯地维护最值，优先级队列队头元素就是最值。但优先级队列无法满足标准队列结构「先进先出」的时间顺序，因为优先级队列底层利用二叉堆对元素进行动态排序，元素的出队顺序是元素的大小顺序，和入队的先后顺序完全没有关系。
+
+所以需要一种新的队列结构，既能够维护队列元素「先进先出」的时间顺序，又能够正确维护队列中所有元素的最值，这就是「单调队列」结构。
+
+「单调队列」这个数据结构主要用来辅助解决滑动窗口相关的问题。
+
+</br>
+
+- [239.滑动窗口最大值](DS/239.滑动窗口最大值.java) &emsp;[🔗](https://leetcode.cn/problems/sliding-window-maximum/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/7cb6eeed7ff6c840.png)
+
+### 搭建解题框架
+
+普通的队列的标准 API：
+
+```java
+class Queue {
+    // enqueue 操作，在队尾加入元素 n
+    void push(int n);
+    // dequeue 操作，删除队头元素
+    void pop();
+}
+```
+
+实现的「单调队列」的 API：
+
+```Java
+class MonotonicQueue {
+    // 在队尾添加元素 n
+    void push(int n);
+    // 返回当前队列中的最大值
+    int max();
+    // 队头元素如果是 n，删除它
+    void pop(int n);
+}
+```
+
+「滑动窗口」问题的解答框架：
+
+```java
+int[] maxSlidingWindow(int[] nums, int k) {
+    MonotonicQueue window = new MonotonicQueue();
+    List<Integer> res = new ArrayList<>();
+
+    for(int i = 0; i < nums.length; i++) {
+        if(i < k - 1) {
+            //先把窗口的前 k - 1 填满
+            window.push(nums[i]);
+        } else {
+            // 窗口开始向前滑动
+            // 移入新元素
+            window.push(nums[i]);
+            // 将当前窗口中的最大元素记入结果
+            res.add(window.max());
+            // 移出最后的元素
+            window.pop(nums[i - k + 1]);
+        }
+    }
+
+    // 将 List 类型转化成 int[] 数组作为返回值
+    int[] arr = new int[res.size()];
+    for (int i = 0; i < res.size(); i++) {
+        arr[i] = res.get(i);
+    }
+    return arr;
+}
+```
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/7a445c48395787c3.png)
+
+</br>
+
+### 实现单调队列数据结构
+
+观察滑动窗口的过程能发现，实现「单调队列」必须使用一种数据结构支持在头部和尾部进行插入和删除，双链表就满足这个条件。
+
+「单调队列」的核心思路和「单调栈」类似，`push` 方法依然在队尾添加元素，但是要把前面比自己小的元素都删掉：
+
+```java
+class MonotonicQueue {
+// 双链表，支持头部和尾部增删元素
+// 维护其中的元素自尾部到头部单调递增
+private LinkedList<Integer> maxq = new LinkedList<>();
+
+// 在尾部添加一个元素 n，维护 maxq 的单调性质
+public void push(int n) {
+    // 将前面小于自己的元素都删除
+    while(!maxq.isEmpty() && maxq.getLast() < n) {
+        maxq.pollLast();
+    }
+    maxq.addLast(n);
+}
+```
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/07bed877199444e4.png)
+
+如果每个元素被加入时都这样操作，最终单调队列中的元素大小就会保持一个单调递减的顺序，因此对于 `max` 方法：
+
+```java
+public void max() {
+    // 队头元素最大
+    return maxq.getFirst();
+}
+```
+
+`pop` 方法在队头删除元素 `n`：
+
+```java
+public void pop(int n) {
+    if(n == maxq.getFirst()) {
+        maxq.pollFirst();
+    }
+}
+```
+
+之所以要判断 `data.getFirst() == n`，是因为想删除的队头元素 `n` 可能已经不存在了，这时候就不用删除：
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/3438c6f6a7b53bff.png)
+
+完整代码：
+
+```java
+/* 单调队列的实现 */
+class MonotonicQueue {
+    LinkedList<Integer> maxq = new LinkedList<>();
+    public void push(int n) {
+        // 将小于 n 的元素全部删除
+        while (!maxq.isEmpty() && maxq.getLast() < n) {
+            maxq.pollLast();
+        }
+        // 然后将 n 加入尾部
+        maxq.addLast(n);
+    }
+
+    public int max() {
+        return maxq.getFirst();
+    }
+
+    public void pop(int n) {
+        if (n == maxq.getFirst()) {
+            maxq.pollFirst();
+        }
+    }
+}
+
+/* 解题函数的实现 */
+int[] maxSlidingWindow(int[] nums, int k) {
+    MonotonicQueue window = new MonotonicQueue();
+    List<Integer> res = new ArrayList<>();
+
+    for (int i = 0; i < nums.length; i++) {
+        if (i < k - 1) {
+            //先填满窗口的前 k - 1
+            window.push(nums[i]);
+        } else {
+            // 窗口向前滑动，加入新数字
+            window.push(nums[i]);
+            // 记录当前窗口的最大值
+            res.add(window.max());
+            // 移出旧数字
+            window.pop(nums[i - k + 1]);
+        }
+    }
+    // 需要转成 int[] 数组再返回
+    int[] arr = new int[res.size()];
+    for (int i = 0; i < res.size(); i++) {
+        arr[i] = res.get(i);
+    }
+    return arr;
+}
+```
+
+有一点细节问题：在实现 `MonotonicQueue` 时，我们使用了 Java 的 `LinkedList`，因为链表结构支持在头部和尾部快速增删元素；而在解法代码中的 `res` 则使用的 `ArrayList` 结构，因为后续会按照索引取元素，所以数组结构更合适。
+
+对于复杂度分析，单独看 `push` 操作的复杂度确实不是 `O(1)`，但是算法整体的复杂度依然是 `O(N)` 线性时间。`nums` 中的每个元素最多被 `push` 和 `pop` 一次，没有任何多余操作，所以整体的复杂度还是 `O(N)`。空间复杂度就是窗口的大小` O(k)`。
+
+</br>
+
+### 单调队列的通用实现
+
+之前的 `MonotonicQueue` 类只实现了 `max` 方法，还可以再额外添加一个 `min` 方法，在 `O(1)` 的时间返回队列中所有元素的最小值。同时前面的 `pop` 方法还需要接收一个参数，这显然有悖于标准队列的做法。
+
+```java
+/* 单调队列的通用实现，可以高效维护最大值和最小值 */
+class MonotonicQueue<E extends Comparable<E>> {
+
+    // 标准队列 API，向队尾加入元素
+    public void push(E elem);
+
+    // 标准队列 API，从队头弹出元素，符合先进先出的顺序
+    public E pop();
+
+    // 标准队列 API，返回队列中的元素个数
+    public int size();
+
+    // 单调队列特有 API，O(1) 时间计算队列中元素的最大值
+    public E max();
+
+    // 单调队列特有 API，O(1) 时间计算队列中元素的最小值
+    public E min();
+}
+```
+
+实现 `min` 方法类似于 `max`，可以在底层再维护一个 `minq` 队列，维护队列中元素从尾部到头部的元素单调递减，这样头部第一个元素就是所有元素中的最小值了。
+
+由于 `push` 方法在添加元素的同时还可能会删除元素，所以 `maxq` 和 `minq` 中都没有保存所有元素。如果想实现标准的 `pop` 方法以及 `size` 方法，还得再额外维护一个标准队列 `q`，这个 `q` 存储所有存在于队列中的元素，不维护单调性：
+
+```java
+/* 单调队列的实现，可以高效维护最大值和最小值 */
+class MonotonicQueue<E extends Comparable<E>> {
+    // 常规队列，存储所有元素
+    LinkedList<E> q = new LinkedList<>();
+    // 元素降序排列的单调队列，头部是最大值
+    LinkedList<E> maxq = new LinkedList<>();
+    // 元素升序排列的单调队列，头部是最小值
+    LinkedList<E> minq = new LinkedList<>();
+
+    public void push(E elem) {
+        // 维护常规队列，直接在队尾插入元素
+        q.addLast(elem);
+
+        // 维护 maxq，将小于 elem 的元素全部删除
+        while (!maxq.isEmpty() && maxq.getLast().compareTo(elem) < 0) {
+            maxq.pollLast();
+        }
+        maxq.addLast(elem);
+
+        // 维护 minq，将大于 elem 的元素全部删除
+        while (!minq.isEmpty() && minq.getLast().compareTo(elem) > 0) {
+            minq.pollLast();
+        }
+        minq.addLast(elem);
+    }
+
+    public E max() {
+        // maxq 的头部是最大元素
+        return maxq.getFirst();
+    }
+
+    public E min() {
+        // minq 的头部是最大元素
+        return minq.getFirst();
+    }
+
+    public E pop() {
+        // 从标准队列头部弹出需要删除的元素
+        E deleteVal = q.pollFirst();
+        assert deleteVal != null;
+
+        // 由于 push 的时候会删除元素，deleteVal 可能已经被删掉了
+        if (deleteVal.equals(maxq.getFirst())) {
+            maxq.pollFirst();
+        }
+        if (deleteVal.equals(minq.getFirst())) {
+            minq.pollFirst();
+        }
+        return deleteVal;
+    }
+
+    public int size() {
+        // 标准队列的大小即是当前队列的大小
+        return q.size();
+    }
+
+    public boolean isEmpty() {
+        return q.isEmpty();
+    }
+}
+```
+
+需要注意的是，这个通用实现内部维护了三个队列，且涉及到 Java 的泛型，所以在刷题平台上执行的效率不会高。如果追求效率，可以根据具体的题目简化单调队列的实现，从而提升效率。
+
+</br>
+
+- [1438.绝对差不超过限制的最长连续子数组](DS/1438.绝对差不超过限制的最长连续子数组.java) &emsp;[🔗](https://leetcode.cn/problems/longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/29c7723979b5b7c7.png)
+
+当窗口内绝对值之差不超过 `limit` 时扩大窗口，当新加入窗口的元素使得绝对值之差超过 `limit` 时开始收缩窗口，窗口的最大宽度即最长子数组的长度。
+
+但当窗口进新元素时可以更新窗口中的最大值和最小值，但当窗口收缩时该如何更新最大值和最小值？这就用到单调队列结构，这里需要一个通用的 `MonotonicQueue` 类，用来高效判断窗口中的最大值和最小值：
+
+```java
+class Solution {
+    public int longestSubarray(int[] nums, int limit) {
+        int left = 0, right = 0;
+        int windowSize = 0, res = 0;
+        MonotonicQueue<Integer> window = new MonotonicQueue<>();
+
+        while(right < nums.length) {
+            // 扩大窗口，更新窗口最值
+            window.push(nums[right]);
+            right++;
+            windowSize++;
+
+            while(window.max() - window.min() > limit) {
+                // 缩小窗口，更新窗口最值
+                window.pop();
+                left++;
+                windowSize--;
+            }
+            // 在窗口收缩判断完之后才更新答案
+            res = Math.max(res, windowSize);
+        }
+        return res;
+    }
+}
+
+/* 单调队列的实现，可以高效维护最大值和最小值 */
+class MonotonicQueue<E extends Comparable<E>> {}
+```
+
+</br>
+
+- [862.和至少为 K 的最短子数组](DS/862.和至少为-k-的最短子数组.java) &emsp;[🔗](https://leetcode.cn/problems/shortest-subarray-with-sum-at-least-k/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/c64233346d1b8635.png)
+
+这题难点在于同时结合了「滑动窗口算法」、「前缀和技巧」和「单调队列」几个知识点。首先，想要快速记录子数组的和，需要「前缀和技巧」预计算一个 `preSum` 数组，然后在这个 `preSum` 数组上施展「滑动窗口算法」寻找一个差值大于 `k` 且宽度最小的「窗口」，这个窗口的大小就是题目想要的结果。当滑动窗口扩大时，新进入窗口的元素 `preSum[right]` 需要知道窗口中最小的那个元素是多少，和最小的那个元素相减才能得到尽可能大的子数组和。快速判断窗口中的最值就需要单调队列结构：
+
+```java
+class Solution {
+    public int shortestSubarray(int[] nums, int k) {
+        int n = nums.length;
+        // 根据题目的数据范围，前缀和数组中元素可能非常大，所以用 long 类型
+        long[] preSum = new long[n + 1];
+        preSum[0] = 0;
+        
+        // 计算 nums 的前缀和数组
+        for(int i = 1; i <= n; i++) {
+            preSum[i] = preSum[i - 1] + nums[i - 1];
+        }
+
+        // 单调队列结构辅助滑动窗口算法
+        MonotonicQueue<Long> window = new MonotonicQueue<>();
+        int left = 0, right = 0;
+        int len = Integer.MAX_VALUE;
+
+        // 开始执行滑动窗口算法框架
+        while(right < preSum.length) {
+            // 扩大窗口，元素入队
+            window.push(preSum[right]);
+            right++;
+            // 若新进入窗口的元素和窗口中的最小值之差大于等于 k，
+            // 说明得到了符合条件的子数组，缩小窗口，使子数组长度尽可能小
+            while(right < preSum.length && !window.isEmpty() 
+                && preSum[right] - window.min() >= k) {
+                // 更新答案
+                len = Math.min(len, right - left);
+                // 缩小窗口
+                window.pop();
+                left++;
+            }
+        }
+        return len == Integer.MAX_VALUE ? -1 : len;
+    }
+}
+
+/* 单调队列的实现，可以高效维护最大值和最小值 */
+class MonotonicQueue<E extends Comparable<E>> {}
+```
+
+</br>
+
+- [918.环形子数组的最大和](DS/918.环形子数组的最大和.java) &emsp;[🔗](https://leetcode.cn/problems/maximum-sum-circular-subarray/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/3199a4c175888538.png)
+
+把 `nums` 数组扩大一倍，计算前缀和数组` preSum`，借助一个定长为 `nums.length` 的单调队列来计算环形数组中的最大子数组和：
+
+```java
+class Solution {
+    public int maxSubarraySumCircular(int[] nums) {
+        int n = nums.length;
+        // 模拟环状的 nums 数组
+        int[] preSum = new int[2 * n + 1];
+        preSum[0] = 0;
+
+        // 计算环状 nums 的前缀和
+        for (int i = 1; i < preSum.length; i++) {
+            preSum[i] = preSum[i - 1] + nums[(i - 1) % n];
+        }
+
+        // 记录答案
+        int maxSum = Integer.MIN_VALUE;
+        // 维护一个滑动窗口，以便根据窗口中的最小值计算最大子数组和
+        MonotonicQueue<Integer> window = new MonotonicQueue<>();
+        window.push(0);
+        for (int i = 1; i < preSum.length; i++) {
+            maxSum = Math.max(maxSum, preSum[i] - window.min());
+            // 维护窗口的大小为 nums 数组的大小
+            if (window.size() == n) {
+                window.pop();
+            }
+            window.push(preSum[i]);
+        }
+
+        return maxSum;
+    }
+}
+
+/* 单调队列的实现，可以高效维护最大值和最小值 */
+class MonotonicQueue<E extends Comparable<E>> {}
 ```
 
 </br>
