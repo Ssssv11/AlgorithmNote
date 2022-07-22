@@ -87,6 +87,9 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
   - [前缀树算法](#前缀树算法)
     - [Trie 树原理](#trie-树原理)
     - [TrieMap/TrieSet API 实现](#triemaptrieset-api-实现)
+  - [单调栈结构](#单调栈结构)
+    - [单调栈模版](#单调栈模版)
+    - [处理环形数组](#处理环形数组)
 
 </br>
 
@@ -6861,6 +6864,164 @@ class MapSum {
 }
 
 class TrieMap { /* 见上文 */ }
+```
+
+</br>
+
+## 单调栈结构
+
+栈（stack）是一种简单的数据结构，先进后出的逻辑顺序，符合某些问题的特点，比如函数调用栈。单调栈实际上就是栈，只是利用了一些巧妙的逻辑，使得每次新元素入栈后，栈内的元素都保持有序（单调递增或单调递减）。
+
+</br>
+
+### 单调栈模版
+
+输入一个数组 `nums`，返回一个等长的结果数组，结果数组中对应索引存储着下一个更大元素，如果没有更大的元素就存 -1。
+
+比如输入一个数组 `nums = [2,1,2,4,3]`，返回数组 `[4,2,4,-1,-1]`。因为第一个 2 后面比 2 大的数是 4; 1 后面比 1 大的数是 2；第二个 2 后面比 2 大的数是 4; 4 后面没有比 4 大的数，填 -1；3 后面没有比 3 大的数，填 -1。
+
+这道题的暴力解法很容易想到，就是对每个元素后面都进行扫描，找到第一个更大的元素就行了。但是暴力解法的时间复杂度是 `O(n^2)`。
+
+这个问题可以抽象思考：把数组的元素想象成并列站立的人，元素大小想象成人的身高。这些人面对站成一列，如何求元素「2」的下一个更大元素？如果能够看到元素「2」，那么他后面可见的第一个人就是「2」的下一个更大元素，因为比「2」小的元素身高不够，都被「2」挡住了，第一个露出来的就是答案。
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/6152a56df1837b8e.png)
+
+代码：
+
+```java
+int[] nextGreaterElement(int[] nums) {
+    int n = nums.length;
+    // 存放答案的数组
+    int res[] = new int[n];
+    Stack<Integer> stack = new Stack();
+
+    // 倒着往栈里放
+    for(int i = n - 1; i >= 0; i--) {
+        // 判定大小
+        while(!stack.isEmpty() && stack.peek() <= nums[i]) {
+            // 小的出栈
+            s.pop();
+        }
+        // nums[i] 后的更大元素
+        res[i] = stack.isEmpty() ? -1 : stack.peek();
+        stack.push(nums[i]);
+    }
+    return res;
+}
+```
+
+这就是单调队列解决问题的模板。for 循环从后往前扫描元素，因为借助的是栈的结构，倒着入栈就是是正着出栈。while 循环是把两个「个子高」元素之间的元素排除。
+
+总共有 `n` 个元素，每个元素都被 `push` 入栈了一次，而最多会被 `pop` 一次，没有任何冗余操作。所以总的计算规模是和元素规模 `n` 成正比的，也就是 `O(n)` 的复杂度。
+
+- [496.下一个更大元素 I](DS/496.下一个更大元素-i.java) &emsp;[🔗](https://leetcode.cn/problems/next-greater-element-i/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/ed461f444ea0ada1.png)
+
+题目说 `nums1` 是 `nums2` 的子集，那么先把 `nums2` 中每个元素的下一个更大元素算出来存到一个映射里，然后再让 `nums1` 中的元素去查表即可：
+
+```java
+public int[] nextGreaterElement(int[] nums1, int[] nums2) {
+    // 记录 nums2 中每个元素的下一个更大元素
+    int[] greater = nextGreaterElement(nums2);
+    // 转化成映射：元素 x -> x 的下一个最大元素
+    HashMap<Integer, Integer> greaterMap = new HashMap<>();
+    
+    for (int i = 0; i < nums2.length; i++) {
+        greaterMap.put(nums2[i], greater[i]);
+    }
+    
+    // nums1 是 nums2 的子集，所以根据 greaterMap 可以得到结果
+    int[] res = new int[nums1.length];
+    for (int i = 0; i < res.length; i++) {
+        res[i] = greaterMap.get(nums1[i]);
+    }
+    return res;
+}
+
+public int[] nextGreaterElement(int[] nums) {
+    // 见上文
+}
+```
+
+这样，对于下一个更大或相等的元素可以将 while 判断中将 `<=` 改为 `<` 即可；对于下一个更小的元素将 while 中 `<=` 改为 `>=`；对于下一个更小或相等的元素可以改为 `>`。
+
+若需寻找上一个，注意之前的 for 循环都是从数组的尾部开始往栈里添加元素，这样栈顶元素就是 `nums[i]` 之后的元素。所以只要我们**从数组的头部开始**往栈里添加元素，栈顶的元素就是 `nums[i]` 之前的元素，即可计算 `nums[i]` 的上一个更大元素。
+
+</br>
+
+- [739.每日温度](DS/739.每日温度.java) &emsp;[🔗](https://leetcode.cn/problems/daily-temperatures/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/608e329dffe43942.png)
+
+这里让求的是当前元素距离下一个更大元素的索引距离，对模版进行修改即可：
+
+```java
+public int[] dailyTemperatures(int[] temperatures) {
+    int n = temperatures.length;
+    int[] res = new int[n];
+    // 存放元素索引，而不是元素
+    Stack<Integer> stack = new Stack<>();
+
+    for(int i = n - 1; i >= 0; i--) {
+        while(!stack.isEmpty() && temperatures[stack.peek()] <= temperatures[i]) {
+            stack.pop();
+        }
+        res[i] = stack.isEmpty() ? 0 : (stack.peek() - i);
+        stack.push(i);
+    }
+
+    return res;
+}
+```
+
+</br>
+
+### 处理环形数组
+
+- [503.下一个更大元素 II](DS/503.下一个更大元素-ii.java) &emsp;[🔗](https://leetcode.cn/problems/next-greater-element-ii/)
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/2f04aa61fc3195cd.png)
+
+输入一个「环形数组」，计算其中每个元素的下一个更大元素。比如输入 `[2,1,2,4,3]`，应该返回 `[4,2,4,-1,4]`，因为拥有了环形属性，最后一个元素 3 绕了一圈后找到了比自己大的元素 4。
+
+我们一般是通过 `%` 运算符求模来模拟环形特效：
+
+```java
+int[] arr = {1,2,3,4,5};
+int n = arr.length, index = 0;
+while (true) {
+    // 在环形数组中转圈
+    print(arr[index % n]);
+    index++;
+}
+```
+
+如输入是 [2,1,2,4,3]，对于最后一个元素 3，如何找到元素 4 作为下一个更大元素。对于这种需求，常用套路就是将数组长度翻倍：
+
+![](https://s3.bmp.ovh/imgs/2022/07/22/322a026beeb1b1a5.png)
+
+这样，元素 3 就可以找到元素 4 作为下一个更大元素了，而且其他的元素都可以被正确地计算。
+
+有了思路，最简单的实现方式当然可以把这个双倍长度的数组构造出来，然后套用算法模板。但是也可以不用构造新数组，而是利用循环数组的技巧来模拟数组长度翻倍的效果：
+
+```java
+public int[] nextGreaterElements(int[] nums) {
+    int n = nums.length;
+    int[] res = new int[n];
+    Stack<Integer> stack = new Stack<>();
+
+    // 数组长度加倍模拟环形数组
+    for(int i = 2 * n - 1; i >= 0; i--) {
+        // 索引 i 要求模
+        while(!stack.isEmpty() && stack.peek() <= nums[i % n]) {
+            stack.pop();
+        }
+        res[i % n] = stack.isEmpty() ? -1 : stack.peek();
+        stack.push(nums[i % n]);
+    }
+    return res;
+}
 ```
 
 </br>
