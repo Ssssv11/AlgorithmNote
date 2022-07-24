@@ -106,6 +106,13 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [搭建解题框架](#搭建解题框架)
     - [实现单调队列数据结构](#实现单调队列数据结构)
     - [单调队列的通用实现](#单调队列的通用实现)
+  - [二叉堆实现优先级队列](#二叉堆实现优先级队列)
+    - [优先级队列](#优先级队列)
+    - [实现 swim 和 sink](#实现-swim-和-sink)
+    - [实现 delMax 和 insert](#实现-delmax-和-insert)
+  - [队列实现栈及栈实现队列](#队列实现栈及栈实现队列)
+    - [用栈实现队列](#用栈实现队列)
+    - [用队列实现栈](#用队列实现栈)
 
 </br>
 
@@ -8414,4 +8421,353 @@ class MonotonicQueue<E extends Comparable<E>> {}
 ```
 
 </br>
+
+## 二叉堆实现优先级队列
+
+二叉堆是一种特殊的堆，二叉堆是完全二叉树或者是近似完全二叉树。二叉堆有两种：最大堆和最小堆。最大堆：父结点的键值总是大于或等于任何一个子节点的键值；最小堆：父结点的键值总是小于或等于任何一个子节点的键值。
+
+二叉堆在逻辑上是一种特殊的二叉树（完全二叉树），只不过存储在数组里。一般的链表二叉树，我们操作节点的指针；而在数组里，我们把数组索引作为指针：
+
+```java
+// 父节点的索引
+int parent(int root) {
+    return root / 2;
+}
+// 左孩子的索引
+int left(int root) {
+    return root * 2;
+}
+// 右孩子的索引
+int right(int root) {
+    return root * 2 + 1;
+}
+```
+
+如 `arr` 是一个字符数组，注意数组的第一个索引 0 不使用：
+
+![jjkLXF.png](https://s1.ax1x.com/2022/07/24/jjkLXF.png)
+
+因为这棵二叉树是「完全二叉树」，所以把 `arr[1]` 作为整棵树的根，每个节点的父节点和左右孩子的索引都可以通过简单的运算得到，这就是二叉堆设计的一个巧妙之处。
+
+</br>
+
+### 优先级队列
+
+优先级队列这种数据结构有一个很有用的功能，在插入或者删除元素时，元素会自动排序，这底层的原理就是二叉堆的操作。
+
+数据结构的功能无非增删查改，优先级队列有两个主要 API，分别是 `insert` 插入一个元素和 `delMax` 删除最大元素（如果底层用最小堆，就是 `delMin`）。
+
+实现一个简化的优先级队列，代码框架：
+
+> 这里用到 Java 的泛型，Key 可以是任何一种可比较大小的数据类型，比如 Integer 等类型。
+
+```java
+public class MaxPQ<Key extends Comparable<Key>> {
+    // 存储元素的数组
+    private Key[] pq;
+    // 当前 PriorityQueue 中的元素个数
+    private int size = 0;
+
+    public MaxPQ(int cap) {
+        // 索引 0 不用，所以多分配一个空间
+        pq = (Key[]) new Comparable[cap + 1];
+    }
+
+    /* 返回当前队列中最大元素 */
+    public Key max() {
+        return pq[1];
+    }
+
+    /* 插入元素 e */
+    public void insert(Key e) {}
+
+    /* 删除并返回当前队列中最大元素 */
+    public Key delMax() {}
+
+    /* 上浮第 x 个元素，以维护最大堆性质 */
+    private void swim(int x) {}
+
+    /* 下沉第 x 个元素，以维护最大堆性质 */
+    private void sink(int x) {}
+
+    /* 交换数组的两个元素 */
+    private void swap(int i, int j) {
+        Key temp = pq[i];
+        pq[i] = pq[j];
+        pq[i] = temp;
+    }
+
+    /* 判断 pq[i] 是否比 pq[j] 小 */
+    private boolean less(int i, int j) {
+        return pq[i].compareTo(pq[j]) < 0;
+    }
+
+    /* left, right, parent */
+}
+```
+
+</br>
+
+### 实现 swim 和 sink
+
+为了维护堆结构，需要有上浮 `swim` 和下沉 `sink` 的操作。
+
+这里要实现是最大堆，每个节点都比它的两个子节点大，但是在插入元素和删除元素时，难免破坏堆的性质，这就需要通过这两个操作来恢复堆的性质。
+
+对于最大堆，会破坏堆性质的有两种情况：
+
+1. 如果某个节点 A 比它的子节点（中的一个）小，那么 A 就不应该做父节点，应该下去，下面那个更大的节点上来做父节点，这就是对 A 进行下沉。
+
+2. 如果某个节点 A 比它的父节点大，那么 A 不应该做子节点，应该把父节点换下来，自己去做父节点，这就是对 A 的上浮。
+
+当然，错位的节点 A 可能要上浮（或下沉）很多次，才能到达正确的位置，恢复堆的性质。
+
+虽然上h和下沉操作是互逆等价的，但是最终我们的操作只会在堆底和堆顶进行，显然堆底的「错位」元素需要上浮，堆顶的「错位」元素需要下沉。
+
+上浮代码实现：
+
+```java
+private void swim(int x) {
+    // 浮到堆顶就不能再上浮
+    while(x > 1 && less(parent(x), x)) {
+        // 如果第 x 个元素比上层大
+        // 将 x 换上去
+        swap(parent(x), x);
+        x = parent(x);
+    }
+}
+```
+
+下沉的代码实现：
+
+上浮某个节点 A，只需要 A 和其父节点比较大小即可；但下沉某个节点 A，需要 A 和其两个子节点比较大小，如果 A 不是最大的就需要调整位置，要把较大的那个子节点和 A 交换。
+
+```java
+private void sink(int x) {
+    // 沉到堆底就不能再下沉
+    while(left(x) <= size) {
+        // 假设左边节点较大
+        int max = left(x);
+        // 如果右边节点存在，比一下大小
+        if(right(x) <= size && less(max, right(x))) {
+            max = right(x);
+        }
+        // 结点 x 比两个孩子都大，不需要下沉
+        if(less(max, x)) {
+            break;
+        }
+        // 否则，不符合最大堆的结构，下沉 x 结点
+        swap(x, max);
+        x = max;
+    }
+}
+```
+
+### 实现 delMax 和 insert
+
+这两个方法就是建立在 `swim` 和 `sink` 上的。
+
+`insert` 方法先把要插入的元素添加到堆底的最后，然后让其上浮到正确位置。
+
+```java
+public void insert(Key e) {
+    size++;
+    // 先把新元素加到最后
+    pq[size] = e;
+    // 然后让它上浮到正确的位置
+    swim(size);
+}
+```
+
+`delMax` 方法先把堆顶元素 A 和堆底最后的元素 B 对调，然后删除 A，最后让 B 下沉到正确位置。
+
+```java
+public Key delMax() {
+    // 最大堆的堆顶就是最大元素
+    Key max = pq[1];
+    // 把这个最大元素换到最后，删除之
+    swap(1, size);
+    pq[size] = null;
+    size--;
+    // 让 pq[1] 下沉到正确位置
+    sink(1);
+    return max;
+}
+```
+
+至此，一个优先级队列就实现了，插入和删除元素的时间复杂度为 `O(logK)`，`K` 为当前二叉堆（优先级队列）中的元素总数。因为时间复杂度主要花费在 `sink` 或者 `swim` 上，而不管上浮还是下沉，最多就树（堆）的高度，也就是 `log` 级别。
+
+</br>
+
+## 队列实现栈及栈实现队列
+
+队列是一种先进先出的数据结构，栈是一种先进后出的数据结构。这两种数据结构底层其实都是数组或者链表实现的。
+
+</br>
+
+### 用栈实现队列
+
+- [232.用栈实现队列](DS/232.用栈实现队列.java) &emsp;[🔗](https://leetcode.cn/problems/implement-queue-using-stacks/)
+
+![jjEerF.png](https://s1.ax1x.com/2022/07/24/jjEerF.png)
+
+使用两个栈 `s1`, `s2` 就能实现一个队列的功能：
+
+![jjEYrD.png](https://s1.ax1x.com/2022/07/24/jjEYrD.png)
+
+```java
+class MyQueue {
+    private Stack<Integer> s1, s2;
+
+    public MyQueue() {
+        s1 = new Stack();
+        s2 = new Stack();
+    }
+
+    // ...
+}
+```
+
+当调用 `push` 让元素入队时，只要把元素压入 `s1` 即可，如 `push` 进 3 个元素分别是 `1,2,3`，那么底层结构：
+
+![jjEyM8.png](https://s1.ax1x.com/2022/07/24/jjEyM8.png)
+
+```java
+/** 添加元素到队尾 */
+public void push(int x) {
+    s1.push(x);
+}
+```
+
+如果这时候使用 `peek` 查看队头的元素，队头元素应该是 1，但是在 `s1` 中 1 被压在栈底，因此需要 `s2` 起到中转的作用：当 `s2` 为空时，可以把 `s1` 的所有元素取出再添加进 `s2`，这时候 `s2` 中元素就是先进先出顺序了。
+
+![jjE5R0.png](https://s1.ax1x.com/2022/07/24/jjE5R0.png)
+
+```java
+/** 返回队头元素 */
+public int peek() {
+    if(s2.isEmpty()) {
+        // 把 s1 元素压入 s2
+        while(!s1.isEmpty()) {
+            s2.push(s1.pop())
+        }
+    }
+    return s2.peek();
+}
+```
+
+同理，对于 `pop` 操作，只需操作 `s2`。
+
+```java
+/** 删除队头的元素并返回 */
+public int pop() {
+    // 先调用 peek 保证 s2 非空
+    peek();
+    return s2.pop();
+}
+```
+
+判断队列是否为空需要判断是否两个栈都为空：
+
+```java
+/** 判断队列是否为空 */
+public boolean empty() {
+    return s1.isEmpty() && s2.isEmpty();
+}
+```
+
+至此，就用栈结构实现了一个队列，核心思想是利用两个栈互相配合。
+
+`peek` 操作调用时可能触发 while 循环，这样时间复杂度是 `O(N)`，但是大部分情况下 while 循环不会被触发，时间复杂度是 `O(1)`。由于 `pop` 操作调用了 `peek`，它的时间复杂度和 `peek` 相同。
+
+最坏时间复杂度是 `O(N)`，因为包含 while 循环，可能需要从 `s1` 往 `s2` 搬移元素。
+
+均摊时间复杂度是 `O(1)`：对于一个元素，最多只可能被搬运一次，也就是说 `peek` 操作平均到每个元素的时间复杂度是 `O(1)`。
+
+</br>
+
+### 用队列实现栈
+
+- [225.用队列实现栈](DS/225.用队列实现栈.java) &emsp;[🔗](https://leetcode.cn/problems/implement-stack-using-queues/)
+
+![jjVHpt.png](https://s1.ax1x.com/2022/07/24/jjVHpt.png)
+
+用队列实现栈只需要一个队列作为底层数据结构。
+
+`push` 直接将元素加入队列，同时记录队尾元素，因为队尾元素相当于栈顶元素，如果要 `top` 查看栈顶元素可以直接返回：
+
+```java
+class MyStack {
+    Queue<Integer> q = new LinkedList<>();
+    int top = 0;
+
+    /** 添加元素到栈顶 */
+    public void push(int x) {
+        // x 是队列的队尾，是栈的栈顶
+        q.offer(x);
+        top = x;
+    }
+
+    /** 返回栈顶元素 */
+    public int top() {
+        return top;
+    }
+}
+```
+
+由于底层数据结构是先进先出的队列，每次 `pop` 只能从队头取元素；但是栈是后进先出，也就是说 `pop` 要从队尾取元素：
+
+[![jjVh0e.png](https://s1.ax1x.com/2022/07/24/jjVh0e.png)](https://imgtu.com/i/jjVh0e)
+
+只需要把队列前面的都取出来再加入队尾，让之前的队尾元素排到队头，这样就可以取出了：
+
+[![jjVHpt.png](https://s1.ax1x.com/2022/07/24/jjVHpt.png)](https://imgtu.com/i/jjVHpt)
+
+```java
+/** 删除栈顶的元素并返回 */
+public int pop() {
+    int size = q.size();
+    while(size > 1) {
+        q.offer(q.poll());
+        size--;
+    }
+    // 之前的队尾元素已经到了队头
+    return q.poll();
+}
+```
+
+这样实现还存在对问题是：原来的队尾元素被提到队头并删除了，但是 `top` 变量没有更新，需要进行修改：
+
+```java
+/** 删除栈顶的元素并返回 */
+public int pop() {
+    int size = q.size();
+    // 留下队尾 2 个元素
+    while (size > 2) {
+        q.offer(q.poll());
+        size--;
+    }
+    // 记录新的队尾元素
+    top = q.peek();
+    q.offer(q.poll());
+    // 删除之前的队尾元素
+    return q.poll();
+}
+```
+
+`empty` 只需看底层的队列是否为空：
+
+```java
+public boolean empty() {
+    return q.isEmpty();
+}
+```
+
+用队列实现栈 `pop` 操作时间复杂度是 `O(N)`，其他操作都是 `O(1)`​。​
+
+</br>
+
+
+
+
 
