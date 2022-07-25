@@ -3256,7 +3256,7 @@ private void backtrack(int[] nums, int start, int target) {
 
 ### 排列（元素无重可复选）
 
-`nums` 数组中的元素无重复且可复选的情况下，若输入 `nums = [1,2,3]`，那么这种条件下的全排列共有 `3^3 = 27` 种：
+`nums` 数组中的元素无重复且可复选的情况下，若输入 `nums = [1,2,3]`，那么这种条件下的全排列共有 $3^3 = 27$ 种：
 
 ```java
 [
@@ -5502,6 +5502,121 @@ public int openLock(String[] deadends, String target) {
 ```
 
 可以不需要 `dead` 这个哈希集合，直接将这些元素初始化到 `visited` 集合中效果相同。
+
+</br>
+
+- [773.滑动谜题](Graph/773.滑动谜题.java) &emsp;[🔗](https://leetcode.cn/problems/sliding-puzzle/)
+
+![jvHult.png](https://s1.ax1x.com/2022/07/25/jvHult.png)
+
+对于这种计算最小步数的问题就要敏感地想到 BFS 算法。
+
+这个题目转化成 BFS 问题需要一些技巧的，现在面临如下问题：
+
+1. 一般的 BFS 算法，是从一个起点 `start` 开始，向终点 `target` 进行寻路，但是拼图问题不是在寻路，而是在不断交换数字，应该怎样转化成 BFS 算法问题。
+
+2. 即便这个问题能够转化成 BFS 问题，如何处理起点 `start` 和终点 `target`？
+
+首先，BFS 算法并不只是一个寻路算法，而是一种暴力搜索算法，只要涉及暴力穷举的问题，BFS 就可以用，而且可以最快地找到答案。
+
+这样问题就可以转化为：如何穷举出 `board` 当前局面下可能衍生出的所有局面。
+
+![jvH211.png](https://s1.ax1x.com/2022/07/25/jvH211.png)
+
+根据数字 0 的位置，它与上下左右的数字进行交换就是当前局面下可能衍生出的所有局面。这样就是一个 BFS 问题，每次先找到数字 0，然后和周围的数字进行交换，形成新的局面加入队列…… 当第一次到达 `target` 时，就得到了赢得游戏的最少步数。
+
+对于第二个问题，这里的 `board` 仅仅是 2x3 的二维数组，所以可以压缩成一个一维字符串。其中比较有技巧性的点在于，二维数组有「上下左右」的概念，压缩成一维后该如何得到某一个索引上下左右的索引。
+
+对于这道题，题目说输入的数组大小都是 2 x 3，所以可以直接手动写出来这个映射：
+
+```java
+// 记录一维字符串的相邻索引
+int[][] neighbor = new int[][]{
+        {1, 3},
+        {0, 4, 2},
+        {1, 5},
+        {0, 4},
+        {3, 1, 5},
+        {4, 2}
+};
+```
+
+这个含义就是，在一维字符串中，索引 `i` 在二维数组中的的相邻索引为 `neighbor[i]`：
+
+![jvbdCd.png](https://s1.ax1x.com/2022/07/25/jvbdCd.png)
+
+观察上图就能发现，如果二维数组中的某个元素 `e` 在一维数组中的索引为 `i`，那么 `e` 的左右相邻元素在一维数组中的索引就是 `i - 1` 和 `i + 1`，而 `e` 的上下相邻元素在一维数组中的索引就是 `i - n` 和 `i + n`，其中 `n` 为二维数组的列数。
+
+这样，对于 `m x n` 的二维数组就可以写一个函数来生成它的 `neighbor` 索引映射。至此就把这个问题完全转化成标准的 BFS 问题了，借助 BFS 代码框架：
+
+```java
+public int slidingPuzzle(int[][] board) {
+    int m = 2, n = 3;
+    StringBuilder sb = new StringBuilder();
+    String target = "123450";
+    // 将 2x3 的数组转化成字符串作为 BFS 的起点
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            sb.append(board[i][j]);
+        }
+    }
+    String start = sb.toString();
+
+    // 记录一维字符串的相邻索引
+    int[][] neighbor = new int[][]{
+            {1, 3},
+            {0, 4, 2},
+            {1, 5},
+            {0, 4},
+            {3, 1, 5},
+            {4, 2}
+    };
+
+    /******* BFS 算法框架开始 *******/
+    Queue<String> q = new LinkedList<>();
+    HashSet<String> visited = new HashSet<>();
+    // 从起点开始 BFS 搜索
+    q.offer(start);
+    visited.add(start);
+
+    int step = 0;
+    while (!q.isEmpty()) {
+        int sz = q.size();
+        for (int i = 0; i < sz; i++) {
+            String cur = q.poll();
+            // 判断是否达到目标局面
+            if (target.equals(cur)) {
+                return step;
+            }
+            // 找到数字 0 的索引
+            int idx = 0;
+            for (; cur.charAt(idx) != '0'; idx++) ;
+            // 将数字 0 和相邻的数字交换位置
+            for (int adj : neighbor[idx]) {
+                String new_board = swap(cur.toCharArray(), adj, idx);
+                // 防止走回头路
+                if (!visited.contains(new_board)) {
+                    q.offer(new_board);
+                    visited.add(new_board);
+                }
+            }
+        }
+        step++;
+    }
+    /******* BFS 算法框架结束 *******/
+    return -1;
+}
+
+private String swap(char[] chars, int i, int j) {
+    char temp = chars[i];
+    chars[i] = chars[j];
+    chars[j] = temp;
+    return new String(chars);
+}
+
+```
+
+很多益智游戏虽然看起来特别巧妙，但都架不住暴力穷举，常用的算法就是回溯算法或 BFS 算法。​
 
 </br>
 
