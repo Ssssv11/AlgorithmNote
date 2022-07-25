@@ -64,6 +64,9 @@ Blog : https://ssssv11.github.io/2022/07/06/算法/
     - [排列（元素可重不可复选）](#排列元素可重不可复选)
     - [子集/组合（元素无重可复选）](#子集组合元素无重可复选)
     - [排列（元素无重可复选）](#排列元素无重可复选)
+  - [回溯算法实践](#回溯算法实践)
+    - [解数独](#解数独)
+    - [括号生成](#括号生成)
 - [图](#图)
   - [图的逻辑结构和具体实现](#图的逻辑结构和具体实现)
   - [图的遍历](#图的遍历)
@@ -3416,6 +3419,205 @@ void backtrack(int[] nums) {
 ```
 
 只要从树的角度思考，这些问题看似复杂多变，实际上稍微修改 base case 就能解决，因此需要牢记树类型题目重要性。
+
+</br>
+
+## 回溯算法实践
+
+### 解数独
+
+- [37.解数独](BackTrack/37.解数独.java) &emsp;[🔗](https://leetcode.cn/problems/sudoku-solver/)
+
+![jv5lcT.png](https://s1.ax1x.com/2022/07/25/jv5lcT.png)
+
+数独的每行、每列以及每一个 3×3 的小方格都不能有相同的数字出现。求解数独的思路就是对每一个格子所有可能的数字进行穷举。对于每个位置从 1 到 9 全部试一遍：
+
+```java
+// 对 board[i][j] 进行穷举尝试
+private void backtrack(char[][] board, int i, int j) {
+    int m = 9, n = 9;
+    for(char ch = '1'; ch <= '9'; ch++) {
+        // 做选择
+        board[i][j] = ch;
+        // 继续穷举下一个
+        backtrack(board, i, j + 1);
+        // 撤销选择
+        board[i][j] = '.';
+    }
+}
+```
+
+当 `j` 到达超过每一行的最后一个索引时，转为增加 `i` 开始穷举下一行，并且在穷举之前添加一个判断，跳过不满足条件的数字：
+
+```Java
+private void backtrack(char[][] board, int i, int j) {
+    int m = 9, n = 9;
+    if (j == n) {
+        // 穷举到最后一列就换到下一行重新开始。
+        backtrack(board, i + 1, 0);
+        return;
+    }
+
+    // 如果该位置是预设的数字
+    if (board[i][j] != '.') {
+        backtrack(board, i, j + 1);
+        return;
+    } 
+
+    for (char ch = '1'; ch <= '9'; ch++) {
+        // 如果遇到不合法的数字就跳过
+        if (!isValid(board, i, j, ch)) {
+            continue;
+        }
+
+        board[i][j] = ch;
+        backtrack(board, i, j + 1);
+        board[i][j] = '.';
+    }
+}
+
+// 判断 board[i][j] 是否可以填入 n
+private boolean isValid(char[][] board, int row, int col, char n) {
+    for(int i = 0; i < 9; i++) {
+        // 判断行是否存在重复
+        if(board[row][i] == n) {
+            return false;
+        }
+        // 判断列是否存在重复
+        if(board[i][col] == n) {
+            return false;
+        }
+        // 判断 3 x 3 方框是否存在重复
+        if(board[(row / 3) * 3 + i / 3][(col / 3) * 3 + i % 3] == n) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+最后，这个算法没有 base case，永远不会停止递归。当 `r == m` 时说明穷举完了最后一行，完成了所有的穷举。
+
+为了减少复杂度，可以让 `backtrack` 函数返回值为 `boolean`，如果找到一个可行解就返回 `true`，这样就可以阻止后续的递归。只找一个可行解，也是题目的本意：
+
+```java
+boolean backtrack(char[][] board, int i, int j) {
+    int m = 9, n = 9;
+    if (j == n) {
+        // 穷举到最后一列就换到下一行重新开始。
+        return backtrack(board, i + 1, 0);
+    }
+    if (i == m) {
+        // 找到一个可行解，触发 base case
+        return true;
+    }
+
+    if (board[i][j] != '.') {
+        // 如果有预设数字
+        return backtrack(board, i, j + 1);
+    } 
+
+    for (char ch = '1'; ch <= '9'; ch++) {
+        // 如果遇到不合法的数字就跳过
+        if (!isValid(board, i, j, ch))
+            continue;
+        
+        board[i][j] = ch;
+        // 如果找到一个可行解，立即结束
+        if (backtrack(board, i, j + 1)) {
+            return true;
+        }
+        board[i][j] = '.';
+    }
+    // 穷举完 1~9 依然没有找到可行解
+    return false;
+}
+
+boolean isValid(char[][] board, int r, int c, char n) {
+    // ...
+}
+```
+
+对于这种时间复杂度的计算，只能给出一个最坏情况，也就是 `O(9^M)`，其中 `M` 是棋盘中空着的格子数量。这个复杂度是完全穷举，或者说是找到所有可行解的时间复杂度。
+
+如果给定的数字越少，相当于给出的约束条件越少，对于计算机这种穷举策略来说，是更容易进行下去，而不容易走回头路进行回溯的，所以说如果仅仅找出一个可行解，这种情况下穷举的速度反而比较快。
+
+</br>
+
+### 括号生成
+
+对于括号合法性的判断，主要是借助「栈」这种数据结构，而对于括号的生成，一般都要利用回溯递归的思想。
+
+- [22.括号生成](BackTrack/22.括号生成.java) &emsp;[🔗](https://leetcode.cn/problems/generate-parentheses/)
+
+[![jvolmF.png](https://s1.ax1x.com/2022/07/25/jvolmF.png)](https://imgtu.com/i/jvolmF)
+
+有关括号问题的性质：
+
+1. **一个「合法」括号组合的左括号数量一定等于右括号数量**。
+
+2. **对于一个「合法」的括号字符串组合** `p`，**必然对于任何** `0 <= i < len(p)` **都有：子串** `p[0..i]` **中左括号的数量都大于或等于右括号的数量**。
+
+这道题其实是在问：现在有 `2n` 个位置，每个位置可以放置字符 `(` 或者 `)`，组成的所有括号组合中，有多少个是合法的。
+
+首先可以打印出所有的 $2^{2n}$ 种组合，根据回溯算法代码框架写出主要思路：
+
+```java
+void backtrack(string& sb, int n, int i) {
+    // i 代表当前的位置，共 2n 个位置
+    // 穷举到最后一个位置了，得到一个长度为 2n 组合
+    if (i == 2 * n) {
+        print(track);
+        return;
+    }
+
+    // 对于每个位置可以是左括号或者右括号两种选择
+    for choice in ['(', ')'] {
+        track.push(choice); // 做选择
+        // 穷举下一个位置
+        backtrack(track, n, i + 1);
+        track.pop(choice); // 撤销选择
+    }
+}
+```
+
+从中筛选出合法的括号组合可以加几个条件进行「剪枝」。
+
+对于 `2n` 个位置，必然有 `n` 个左括号，`n` 个右括号，所以不是简单的记录穷举位置 `i`，而是用 `left` 记录还可以使用多少个左括号，用 `right` 记录还可以使用多少个右括号，这样就可以通过刚才总结的合法括号规律进行筛选了：
+
+```java
+List<String> result = new LinkedList<>();
+
+public List<String> generateParenthesis(int n) {
+    StringBuilder sb = new StringBuilder();
+    backTrack(n, n, sb);
+    return result;
+
+}
+private void backTrack(int leftCount, int rightCount, StringBuilder sb){
+    //如果左括号剩下的多 说明不符合要求
+    if(leftCount > rightCount) {
+        return;
+    }
+    //括号数量最后变成了 负数 不合法
+    if(leftCount < 0 || rightCount < 0) {
+        return;
+    }
+
+    if(leftCount == 0 && rightCount == 0){
+        //找到一种可能 将结果加入到 result 集合中
+        result.add(sb.toString());
+    }
+
+    sb.append('(');
+    backTrack(leftCount - 1, rightCount, sb);
+    sb.deleteCharAt(sb.length() - 1);
+
+    sb.append(')');
+    backTrack(leftCount, rightCount - 1, sb);
+    sb.deleteCharAt(sb.length() - 1);
+}
+```
 
 </br>
 
