@@ -3641,7 +3641,7 @@ private void backTrack(int leftCount, int rightCount, StringBuilder sb){
 
    $C(n, k) = \frac{n!}{k!(n - k)!}$
 
-排列组合问题的各种变体都可以抽象成「球盒模型」，P(n, k) 就可以抽象成下面这个场景：
+排列组合问题的各种变体都可以抽象成「球盒模型」，`P(n, k)` 就可以抽象成下面这个场景：
 
 ![jzkTx0.png](https://s1.ax1x.com/2022/07/26/jzkTx0.png)
 
