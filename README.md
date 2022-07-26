@@ -8,7 +8,7 @@ Github: https://github.com/Ssssv11/AlgorithmNote
 
 Gitee : https://gitee.com/Ssssv11/AlgorithmNote
 
-Blog : https://ssssv11.github.io/2022/07/06/算法/
+Blog : https://ssssv11.github.io
 
 </br>
 
