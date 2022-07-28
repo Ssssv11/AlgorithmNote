@@ -1,4 +1,4 @@
-package Else;
+package Math;
 /*
  * @lc app=leetcode.cn id=191 lang=java
  *

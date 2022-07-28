@@ -1,4 +1,4 @@
-package Else;
+package Math;
 
 /*
  * @lc app=leetcode.cn id=268 lang=java
@@ -33,11 +33,12 @@ class Solution {
     public int missingNumber(int[] nums) {
         int n = nums.length;
         int res = 0;
-        // 先和新补的索引异或一下
+        // 先和新补的索引异或
         res ^= n;
         // 和其他的元素、索引做异或
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++) {
             res ^= i ^ nums[i];
+        }
         return res;
     }
 }
