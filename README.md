@@ -141,6 +141,9 @@ Blog : https://ssssv11.github.io
   - [动态规划解框架](#动态规划解框架)
     - [斐波那契数列](#斐波那契数列)
     - [凑零钱问题](#凑零钱问题)
+  - [子序列问题](#子序列问题)
+    - [最长递增子序列](#最长递增子序列)
+    - [二维最长递增的子序列](#二维最长递增的子序列)
 
 </br>
 
@@ -11090,3 +11093,209 @@ int coinChange(int[] coins, int amount) {
 
 </br>
 
+## 子序列问题
+
+### 最长递增子序列
+
+最长递增子序列（Longest Increasing Subsequence，LIS）是一个非常经典的算法问题，比较容易想到的是动态规划解法，时间复杂度 `O(N^2)`，借这个问题来由浅入深地寻找状态转移方程，写出动态规划解法。
+
+- [300.最长递增子序列](DP/300.最长递增子序列.java) &emsp;[🔗](https://leetcode.cn/problems/longest-increasing-subsequence/)
+
+![vF69eS.png](https://s1.ax1x.com/2022/07/31/vF69eS.png)
+
+注意「子序列」和「子串」这两个名词的区别，子串一定是连续的，而子序列不一定是连续的。
+
+</br>
+
+1. 动态规划解法
+
+动态规划的核心设计思想是数学归纳法。
+
+**dp 数组的定义**：`dp[i]` **表示以** `nums[i]` **这个数结尾的最长递增子序列的长度。**
+
+根据这个定义就可以推出 base case：`dp[i]` 初始值为 1，因为以 `nums[i]` 结尾的最长递增子序列至少要包含它自己。
+
+![vF6WTg.png](https://s1.ax1x.com/2022/07/31/vF6WTg.png)
+
+根据这个定义，最终结果（子序列的最大长度）应该是 dp 数组中的最大值。
+
+```java
+int res = 0;
+for(int i = 0; i < dp.length; i++) {
+    res = Math.max(res, dp[i]);
+}
+return res;
+```
+
+使用数学归纳的思想来设计算法逻辑进行状态转移：
+
+假设已经知道了 `dp[0..4]` 的所有结果，如何通过这些已知结果推出 `dp[5]`：
+
+![vFcN3n.png](https://s1.ax1x.com/2022/07/31/vFcN3n.png)
+
+根据对 dp 数组的定义，现在想求 `dp[5]` 的值，就是想求以 `nums[5]` 为结尾的最长递增子序列。
+
+`nums[5] = 3`，**既然是递增子序列，只要找到前面那些结尾比 3 小的子序列，然后把 3 接到这些子序列末尾，就可以形成一个新的递增子序列，而且这个新的子序列长度加一。**
+
+nums[5] 前面小于它的元素用 for 循环比较就能把这些元素找出来。以这些元素为结尾的最长递增子序列的长度就是 dp 数组中记录的值。
+
+如上图，`nums[0]` 和 `nums[4]` 都是小于 `nums[5]` 的，然后对比 `dp[0]` 和 `dp[4]` 的值，让 `nums[5]` 和更长的递增子序列结合，得出 `dp[5] = 3`：
+
+![vFcjDf.png](https://s1.ax1x.com/2022/07/31/vFcjDf.png)
+
+```java
+for(int j = 0; j < i; j++) {
+    if(nums[i] > nums[j]) {
+        dp[i] = Math.max(dp[i], dp[j] + 1);
+    }
+}
+```
+
+当 `i = 5` 时，这段代码逻辑就可以算出 `dp[5]`。对于 `dp[4]`，`dp[3]` 可以运用数学归纳法：
+
+```java
+for(int i = 0; i < nums.length; i++) {
+    for(int j = 0; j < i; j++) {
+        // 寻找 nums[0..j-1] 中比 nums[i] 小的元素
+        if(nums[i] > nums[j]) {
+            // 把 nums[i] 接在后面，即可形成长度为 dp[j] + 1，
+            // 且以 nums[i] 为结尾的递增子序列
+            dp[i] = Math.max(dp[i], dp[j] + 1);
+        }
+    }
+}
+```
+
+结合 base case 可以写出完整代码：
+
+```java
+int lengthOfLIS(int[] nums) {
+    // 定义：dp[i] 表示以 nums[i] 这个数结尾的最长递增子序列的长度
+    int[] dp = new int[nums.length];
+    
+    // base case：dp 数组全都初始化为 1
+    Arrays.fill(dp, 1);
+
+    for(int i = 0; i < nums.length; i++) {
+        for(int j = 0; j < i; j++) {
+            if(nums[i] > nums[j]) {
+                dp[i] = Math.max(dp[i], dp[j] + 1);
+            }
+        }
+    }
+
+    int res = 0;
+    for(int i = 0; i < dp.length; i++) {
+        res = Math.max(res, dp[i]);
+    }
+    return res;
+}
+```
+
+目前的解法是标准的动态规划，但对最长递增子序列问题来说，这个解法不是最优的，可能无法通过所有测试用例。
+
+</br>
+
+2. 二分查找解法
+
+最长递增子序列和一种叫做 patience game 的纸牌游戏有关，有一种排序方法就叫做 patience sorting（耐心排序）。
+
+首先，对一排扑克牌要像遍历数组那样从左到右一张一张处理这些扑克牌，最终要把这些牌分成若干堆。
+
+![vFgXW9.png](https://s1.ax1x.com/2022/07/31/vFgXW9.png)
+
+处理这些扑克牌要遵循以下规则：
+
+只能把点数小的牌压到点数比它大的牌上；如果当前牌点数较大没有可以放置的堆，则新建一个堆，把这张牌放进去；如果当前牌有多个堆可供选择，则选择最左边的那一堆放置。
+
+比如上述的扑克牌最终会被分成这样 5 堆（规定纸牌 A 的牌面是最大的，纸牌 2 的牌面是最小的）。
+
+![vF2eyt.png](https://s1.ax1x.com/2022/07/31/vF2eyt.png)
+
+遇到多个可选择堆的时候要放到最左边的堆上可以保证牌堆顶的牌有序（2, 4, 7, 8, Q）。
+
+![vF2Kw8.png](https://s1.ax1x.com/2022/07/31/vF2Kw8.png)
+
+按照上述规则执行，可以算出最长递增子序列，牌的堆数就是最长递增子序列的长度：
+
+![vF2GSs.png](https://s1.ax1x.com/2022/07/31/vF2GSs.png)
+
+只需要把处理扑克牌的过程写出来即可。每次处理一张扑克牌都要找一个合适的牌堆顶来放置并且牌堆顶的牌有序，这就能用到二分查找：用二分查找来搜索当前牌应放置的位置。
+
+```java
+int lengthOfLIS(int[] nums) {
+    int[] top = new int[nums.length];
+    // 牌堆数初始化为 0
+    int piles = 0;
+    for (int i = 0; i < nums.length; i++) {
+        // 要处理的扑克牌
+        int poker = nums[i];
+
+        /***** 搜索左侧边界的二分查找 *****/
+        int left = 0, right = piles;
+        while (left < right) {
+            int mid = (left + right) / 2;
+            if (top[mid] > poker) {
+                right = mid;
+            } else if (top[mid] < poker) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        
+        // 没找到合适的牌堆，新建一堆
+        if (left == piles) piles++;
+        // 把这张牌放到牌堆顶
+        top[left] = poker;
+    }
+    // 牌堆数就是 LIS 长度
+    return piles;
+}
+```
+
+</br>
+
+### 二维最长递增的子序列
+
+- [354.俄罗斯套娃信封问题](DP/354.俄罗斯套娃信封问题.java) [🔗](https://leetcode-cn.com/problems/russian-doll-envelopes/)
+
+![vF2O78.png](https://s1.ax1x.com/2022/07/31/vF2O78.png)
+
+这道题目就是最长递增子序列的变种，因为每次合法的嵌套是大的套小的，相当于在二维平面中找一个最长递增的子序列，其长度就是最多能嵌套的信封个数。
+
+前面的标准 LIS 算法只能在一维数组中寻找最长子序列，而信封是由 `(w, h)` 这样的二维数对形式表示的。可以先对宽度 `w` 进行升序排序，如果遇到 `w` 相同的情况，则按照高度 `h` 降序排序；之后把所有的 `h` 作为一个数组，在这个数组上计算 LIS 的长度就是答案。
+
+![vFRlB6.png](https://s1.ax1x.com/2022/07/31/vFRlB6.png)
+
+然后在 `h` 上寻找最长递增子序列，这个子序列就是最优的嵌套方案：
+
+![vFRBHf.png](https://s1.ax1x.com/2022/07/31/vFRBHf.png)
+
+首先，对宽度 `w` 从小到大排序，确保了 `w` 这个维度可以互相嵌套，所以只需要专注高度 `h` 这个维度能够互相嵌套即可。其次，两个 `w` 相同的信封不能相互包含，所以对于宽度 `w` 相同的信封，对高度 `h` 进行降序排序，保证 LIS 中不存在多个 `w` 相同的信封。
+
+```java
+public int maxEnvelopes(int[][] envelopes) {
+    public int maxEnvelopes(int[][] envelopes) {
+        int n = envelopes.length;
+        // 按宽度升序排列，如果宽度一样，则按高度降序排列
+        Arrays.sort(envelopes, (a, b) -> a[0] == b[0] ? b[1] - a[1] : a[0] - b[0]);
+        
+        // 对高度数组寻找 LIS
+        int[] height = new int[n];
+        for(int i = 0; i < n; i++) {
+            height[i] = envelopes[i][1];
+        }
+
+        return lengthOfLIS(height);
+    }
+
+    private int lengthOfLIS(int[] nums) {
+        // 见前文
+    }
+}
+```
+
+由于增加了测试用例，这里必须使用二分搜索版的 `lengthOfLIS` 函数才能通过所有测试用例。这样算法的时间复杂度为 `O(NlogN)`，因为排序和计算 LIS 各需要 `O(NlogN)` 的时间，加到一起还是 `O(NlogN)`；空间复杂度为 `O(N)`，因为计算 LIS 的函数中需要一个 `top` 数组。
+
+</br>
