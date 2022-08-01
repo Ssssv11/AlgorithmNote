@@ -144,6 +144,8 @@ Blog : https://ssssv11.github.io
   - [子序列问题](#子序列问题)
     - [最长递增子序列](#最长递增子序列)
     - [二维最长递增的子序列](#二维最长递增的子序列)
+    - [最大子数组](#最大子数组)
+    - [最长公共子序列](#最长公共子序列)
 
 </br>
 
@@ -11297,5 +11299,278 @@ public int maxEnvelopes(int[][] envelopes) {
 ```
 
 由于增加了测试用例，这里必须使用二分搜索版的 `lengthOfLIS` 函数才能通过所有测试用例。这样算法的时间复杂度为 `O(NlogN)`，因为排序和计算 LIS 各需要 `O(NlogN)` 的时间，加到一起还是 `O(NlogN)`；空间复杂度为 `O(N)`，因为计算 LIS 的函数中需要一个 `top` 数组。
+
+</br>
+
+### 最大子数组
+
+- [53. 最大子数组和](DP/53.最大子数组和.java) &emsp;[🔗](https://leetcode-cn.com/problems/maximum-subarray/)
+
+![vkOaZD.png](https://s1.ax1x.com/2022/08/01/vkOaZD.png)
+
+1. 动态规划解法
+
+这道题与求「最长递增子序列」非常相似，可以使用动态规划技巧。对 dp 数组的定义为：
+
+**以** `nums[i]` **为结尾的「最大子数组和」为** `dp[i]`。
+
+这样，整个数组的数组和就是 `dp[n - 1]`。假设现在知道 `dp[i - 1]`，需要推出 `dp[i]`：
+
+![vkvTSA.png](https://s1.ax1x.com/2022/08/01/vkvTSA.png)
+
+对于 `dp[i]` 有两种选择：前面的相邻子数组连接，形成一个和更大的子数组；自己单独作为一个更大的子数组（如上图绿色为与前面相邻，橙色为单独）：
+
+```java
+dp[i] = Math.max(nums[i], nums[i] + dp[i - 1]);
+```
+
+最后再从 dp 数组中返回最大值即可：
+
+```java
+public int maxSubArray(int[] nums) {
+    if(nums.length == 0) {
+        return 0;
+    }
+    int[] dp = new int[nums.length];
+
+    // base case 
+    // 第一个元素前面没有子数组
+    dp[0] = nums[0];
+
+    // 状态转移方程
+    for(int i = 1; i < nums.length; i++) {
+        dp[i] = Math.max(nums[i], nums[i] + dp[i - 1]);
+    }
+
+    int res = Integer.MIN_VALUE;
+    for(int num : dp) {
+        res = res > num ? res : num;
+    }
+    return res;
+}
+```
+
+以上解法时间复杂度是 `O(N)`，空间复杂度也是 `O(N)`，较暴力解法已经很优秀了，不过注意到 `dp[i]` 仅仅和 `dp[i-1]` 的状态有关，因此可以进一步优化，将空间复杂度降低：
+
+```java
+public int maxSubArray(int[] nums) {
+    if(nums.length == 0) {
+        return 0;
+    }
+
+    // base case 
+    // 第一个元素前面没有子数组
+    int prev = nums[0];
+    int curr = 0, res = prev;
+
+    // 状态转移方程
+    for(int i = 1; i < nums.length; i++) {
+        curr = Math.max(nums[i], nums[i] + prev);
+        prev = curr;
+        res = Math.max(res, prev);
+    }
+    
+    return res;
+}
+```
+
+</br>
+
+2. 前缀和解法
+
+前缀和数组 `preSum` 就是 `nums` 元素的累加和，`preSum[i+1] - preSum[j]` 就是子数组 `nums[j..i]` 之和（根据 `preSum` 数组的实现，索引 0 是占位符，所以 `i` 有一位索引偏移）。
+
+那么以 `nums[i]` 为结尾的最大子数组之和就是 `preSum[i+1] - min(preSum[0..i])`。
+
+所以可以利用前缀和数组计算以每个元素结尾的子数组之和，进而得到和最大的子数组：
+
+```java
+public int maxSubArray(int[] nums) {
+    int n = nums.length;
+    int[] preSum = new int[n + 1];
+    preSum[0] = nums[0];
+    // 构造 nums 的前缀和数组
+    for(int i = 1; i <= n; i++) {
+        preSum[i] = preSum[i - 1] + nums[i - 1];
+    }
+
+    int res = Integer.MIN_VALUE;
+    int minVal = Integer.MIN_VALUE;
+
+    for (int i = 0; i < n; i++) {
+        // 维护 minVal 是 preSum[0..i] 的最小值
+        minVal = Math.min(minVal, preSum[i]);
+        // 以 nums[i] 结尾的最大子数组和就是 preSum[i+1] - min(preSum[0..i])
+        res = Math.max(res, preSum[i + 1] - minVal);
+    }
+
+    return res;
+}
+```
+
+</br>
+
+### 最长公共子序列
+
+- [1143.最长公共子序列](DP/1143.最长公共子序列.java) &emsp;[🔗](https://leetcode.cn/problems/longest-common-subsequence/)
+
+![vAFDYV.png](https://s1.ax1x.com/2022/08/01/vAFDYV.png)
+
+计算最长公共子序列（Longest Common Subsequence，LCS）是一道经典的动态规划题目，因为它的解法是典型的二维动态规划，大部分较难的字符串问题都和它有着很大的关联。
+
+1. 明确 `dp` 数组的含义
+
+对于两个字符串的动态规划问题一般都需要一个二维 `dp` 数组。对于本题的 `s1` 和 `s2` 字符串，需要构造如下的 DP table：
+
+![vAESsg.png](https://s1.ax1x.com/2022/08/01/vAESsg.png)
+
+其中，`dp[i][j]` **表示** `s1[0..i - 1]` **和** `s2[0..j - 1]` **的最长公共子序列的长度。**
+
+如上图 `dp[2][4]` 就表示：对于 `"ac"` 和 `"babc"` 的最长公共子序列长度为 `2`。根据这个定义，最终的答案应该是 `dp[3][6]`。
+
+</br>
+
+2. 定义 base case
+
+让索引为 0 的行和列表示空串，`dp[0][..]` 和 `dp[..][0]` 都应该初始化为 0。
+
+如按照定义，`dp[0][3] = 0` 的含义是：对于空字符串 `""` 和 `"bab"` 的最长公共子序列长度为 0。由于有空字符串，它们的最长公共子序列的长度显然应该为 0。
+
+</br>
+
+3. 找状态方程
+
+不妨称最长公共子序列为 `lcs`。对于 `s1` 和 `s2` 中的每个字符有两种选择：要么在 `lcs` 中，要么不在。
+
+![vAVk0H.png](https://s1.ax1x.com/2022/08/01/vAVk0H.png)
+
+「在」和「不在」就是选择。如果某个字符应该在 `lcs` 中，那么这个字符肯定同时存在于 `s1` 和 `s2` 中。所以可以先写出一个递归解法，参考 `dp` 数组的定义来定义 `dp` 函数。
+
+`dp(1, j)` **表示** `s1[0..i]` **和** `s2[0..j]` **中最长公共子序列的长度。**这样就可以找到状态转移关系：如果 `s1[i] == s2[j]`，说明这个公共字符一定在 `lcs` 中，若知道了 `s1[0..i - 1]` 和 `s2[0..j - 1]` 中的 `lcs` 长度，再加 1 就是 `s1[0..i]` 和 `s2[0..j]` 中 `lcs` 的长度。根据该定义可以写出以下逻辑：
+
+```java
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
+    // base case
+    if (i == s1.length() || j == s2.length()) {
+        return 0;
+    }
+
+    if (s1.charAt(i) == s2.charAt(j)) {
+        // s1[i] 和 s2[j] 必然在 lcs 中
+        return 1 + dp(s1, i + 1, s2, j + 1)
+    } else {
+        // ...
+    }
+}
+```
+
+如果 `s1[i] != s2[j]` 意味着 `s1[i]` 和 `s2[j]` 中至少有一个字符不在 `lcs` 中。有三种情况，分别计算三种情况的值，取最大值即可：
+
+```java
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
+    if (s1.charAt(i) == s2.charAt(j)) {
+        return 1 + dp(s1, i + 1, s2, j + 1)
+    } else {
+        // s1[i] 和 s2[j] 中至少有一个字符不在 lcs 中
+        // 穷举三种情况的结果，取其中的最大结果
+        return max(            
+            // 1. s1[i] 不在 lcs 中
+            dp(s1, i + 1, s2, j),
+            // 2. s2[j] 不在 lcs 中
+            dp(s1, i, s2, j + 1),
+            // 3. 都不在 lcs 中
+            dp(s1, i + 1, s2, j + 1)
+        );
+    }
+}
+```
+
+情况三在计算 `s1[i + 1..]` 和 `s2[j + 1..]` 的 `lcs` 长度，这个长度肯定是小于等于情况二 `s1[i..]` 和 `s2[j+1..]` 中的 `lcs` 长度的，因为 `s1[i + 1..]` 比 `s1[i..]` 短。同理，情况三的结果肯定也小于等于情况一。因此，情况三被情况一和情况二包含了，所以可以直接忽略掉情况三，完整代码如下：
+
+```java
+// 备忘录，消除重叠子问题
+int[][] memo;
+
+int longestCommonSubsequence(String s1, String s2) {
+    int m = s1.length(), n = s2.length();
+    // 备忘录值为 -1 代表未曾计算
+    memo = new int[m][n];
+    for (int[] row : memo) 
+        Arrays.fill(row, -1);
+    // 计算 s1[0..] 和 s2[0..] 的 lcs 长度
+    return dp(s1, 0, s2, 0);
+}
+
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
+    // base case
+    if (i == s1.length() || j == s2.length()) {
+        return 0;
+    }
+    // 如果之前计算过，则直接返回备忘录中的答案
+    if (memo[i][j] != -1) {
+        return memo[i][j];
+    }
+    // 根据 s1[i] 和 s2[j] 的情况做选择
+    if (s1.charAt(i) == s2.charAt(j)) {
+        // s1[i] 和 s2[j] 必然在 lcs 中
+        memo[i][j] = 1 + dp(s1, i + 1, s2, j + 1);
+    } else {
+        // s1[i] 和 s2[j] 至少有一个不在 lcs 中
+        memo[i][j] = Math.max(
+            dp(s1, i + 1, s2, j),
+            dp(s1, i, s2, j + 1)
+        );
+    }
+    return memo[i][j];
+}
+```
+
+使用 `memo` 备忘录是因为有重叠子问题，抽象出核心 `dp` 函数的递归框架：
+
+```java
+int dp(int i, int j) {
+    dp(i + 1, j + 1); // #1
+    dp(i, j + 1);     // #2
+    dp(i + 1, j);     // #3
+}
+```
+
+假如从 `dp(i, j)` 转移到 `dp(i + 1, j + 1)`，有不止一种方式，可以直接走 `#1`，也可以走 `#2 -> #3`，也可以走 `#3 -> #2`。这就是重叠子问题，如果不用 `memo` 备忘录消除子问题，那么 `dp(i + 1, j + 1)` 就会被多次计算。
+
+根据递归解法很容易可以写出自底向上的迭代解法，`dp` 数组的定义如前文所定义的。据此可以写出解法：
+
+```java
+public int longestCommonSubsequence(String text1, String text2) {
+    int m = text1.length(), n = text2.length();
+    int[][] dp = new int[m + 1][n + 1];
+    // 定义：s1[0..i-1] 和 s2[0..j-1] 的 lcs 长度为 dp[i][j]
+    // 目标：s1[0..m-1] 和 s2[0..n-1] 的 lcs 长度，即 dp[m][n]
+    // base case: dp[0][..] = dp[..][0] = 0
+
+    for(int i = 1; i <= m; i++) {
+        for(int j = 1; j <= n; j++) {
+            // i 和 j 从 1 开始，所以要减一
+            if(text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                // s1[i-1] 和 s2[j-1] 必然在 lcs 中
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                // s1[i-1] 和 s2[j-1] 至少有一个不在 lcs 中
+                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+
+    return dp[m][n];
+}
+```
+
+对于两个字符串的动态规划问题，一般来说都是这样定义 DP table，因为这样 `dp[i][j]` 的状态可以通过之前的状态推导出来：
+
+![vAuc60.png](https://s1.ax1x.com/2022/08/01/vAuc60.png)
+
+找状态转移方程的方法是思考每个状态有哪些「选择」，只要能用正确的逻辑做出正确的选择，算法就能够正确运行。
 
 </br>
