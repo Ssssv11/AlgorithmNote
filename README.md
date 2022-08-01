@@ -11449,92 +11449,92 @@ public int maxSubArray(int[] nums) {
 `dp(1, j)` **表示** `s1[0..i]` **和** `s2[0..j]` **中最长公共子序列的长度。**这样就可以找到状态转移关系：如果 `s1[i] == s2[j]`，说明这个公共字符一定在 `lcs` 中，若知道了 `s1[0..i - 1]` 和 `s2[0..j - 1]` 中的 `lcs` 长度，再加 1 就是 `s1[0..i]` 和 `s2[0..j]` 中 `lcs` 的长度。根据该定义可以写出以下逻辑：
 
 ```java
-// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
-int dp(String s1, int i, String s2, int j) {
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
     // base case
     if (i == s1.length() || j == s2.length()) {
         return 0;
     }
 
-    if (s1.charAt(i) == s2.charAt(j)) {
-        // s1[i] 和 s2[j] 必然在 lcs 中
-        return 1 + dp(s1, i + 1, s2, j + 1)
-    } else {
-        // ...
-    }
+    if (s1.charAt(i) == s2.charAt(j)) {
+        // s1[i] 和 s2[j] 必然在 lcs 中
+        return 1 + dp(s1, i + 1, s2, j + 1)
+    } else {
+        // ...
+    }
 }
 ```
 
 如果 `s1[i] != s2[j]` 意味着 `s1[i]` 和 `s2[j]` 中至少有一个字符不在 `lcs` 中。有三种情况，分别计算三种情况的值，取最大值即可：
 
 ```java
-// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
-int dp(String s1, int i, String s2, int j) {
-    if (s1.charAt(i) == s2.charAt(j)) {
-        return 1 + dp(s1, i + 1, s2, j + 1)
-    } else {
-        // s1[i] 和 s2[j] 中至少有一个字符不在 lcs 中
-        // 穷举三种情况的结果，取其中的最大结果
-        return max(            
-            // 1. s1[i] 不在 lcs 中
-            dp(s1, i + 1, s2, j),
-            // 2. s2[j] 不在 lcs 中
-            dp(s1, i, s2, j + 1),
-            // 3. 都不在 lcs 中
-            dp(s1, i + 1, s2, j + 1)
-        );
-    }
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
+    if (s1.charAt(i) == s2.charAt(j)) {
+        return 1 + dp(s1, i + 1, s2, j + 1)
+    } else {
+        // s1[i] 和 s2[j] 中至少有一个字符不在 lcs 中
+        // 穷举三种情况的结果，取其中的最大结果
+        return max(            
+            // 1. s1[i] 不在 lcs 中
+            dp(s1, i + 1, s2, j),
+            // 2. s2[j] 不在 lcs 中
+            dp(s1, i, s2, j + 1),
+            // 3. 都不在 lcs 中
+            dp(s1, i + 1, s2, j + 1)
+        );
+    }
 }
 ```
 
 情况三在计算 `s1[i + 1..]` 和 `s2[j + 1..]` 的 `lcs` 长度，这个长度肯定是小于等于情况二 `s1[i..]` 和 `s2[j+1..]` 中的 `lcs` 长度的，因为 `s1[i + 1..]` 比 `s1[i..]` 短。同理，情况三的结果肯定也小于等于情况一。因此，情况三被情况一和情况二包含了，所以可以直接忽略掉情况三，完整代码如下：
 
 ```java
-// 备忘录，消除重叠子问题
-int[][] memo;
+// 备忘录，消除重叠子问题
+int[][] memo;
 
-int longestCommonSubsequence(String s1, String s2) {
-    int m = s1.length(), n = s2.length();
-    // 备忘录值为 -1 代表未曾计算
-    memo = new int[m][n];
-    for (int[] row : memo) 
-        Arrays.fill(row, -1);
-    // 计算 s1[0..] 和 s2[0..] 的 lcs 长度
-    return dp(s1, 0, s2, 0);
+int longestCommonSubsequence(String s1, String s2) {
+    int m = s1.length(), n = s2.length();
+    // 备忘录值为 -1 代表未曾计算
+    memo = new int[m][n];
+    for (int[] row : memo) 
+        Arrays.fill(row, -1);
+    // 计算 s1[0..] 和 s2[0..] 的 lcs 长度
+    return dp(s1, 0, s2, 0);
 }
 
-// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
-int dp(String s1, int i, String s2, int j) {
-    // base case
-    if (i == s1.length() || j == s2.length()) {
-        return 0;
-    }
-    // 如果之前计算过，则直接返回备忘录中的答案
-    if (memo[i][j] != -1) {
-        return memo[i][j];
-    }
-    // 根据 s1[i] 和 s2[j] 的情况做选择
-    if (s1.charAt(i) == s2.charAt(j)) {
-        // s1[i] 和 s2[j] 必然在 lcs 中
-        memo[i][j] = 1 + dp(s1, i + 1, s2, j + 1);
-    } else {
-        // s1[i] 和 s2[j] 至少有一个不在 lcs 中
-        memo[i][j] = Math.max(
-            dp(s1, i + 1, s2, j),
-            dp(s1, i, s2, j + 1)
-        );
-    }
-    return memo[i][j];
+// 定义：计算 s1[i..] 和 s2[j..] 的最长公共子序列长度
+int dp(String s1, int i, String s2, int j) {
+    // base case
+    if (i == s1.length() || j == s2.length()) {
+        return 0;
+    }
+    // 如果之前计算过，则直接返回备忘录中的答案
+    if (memo[i][j] != -1) {
+        return memo[i][j];
+    }
+    // 根据 s1[i] 和 s2[j] 的情况做选择
+    if (s1.charAt(i) == s2.charAt(j)) {
+        // s1[i] 和 s2[j] 必然在 lcs 中
+        memo[i][j] = 1 + dp(s1, i + 1, s2, j + 1);
+    } else {
+        // s1[i] 和 s2[j] 至少有一个不在 lcs 中
+        memo[i][j] = Math.max(
+            dp(s1, i + 1, s2, j),
+            dp(s1, i, s2, j + 1)
+        );
+    }
+    return memo[i][j];
 }
 ```
 
 使用 `memo` 备忘录是因为有重叠子问题，抽象出核心 `dp` 函数的递归框架：
 
 ```java
-int dp(int i, int j) {
-    dp(i + 1, j + 1); // #1
-    dp(i, j + 1);     // #2
-    dp(i + 1, j);     // #3
+int dp(int i, int j) {
+    dp(i + 1, j + 1); // #1
+    dp(i, j + 1);     // #2
+    dp(i + 1, j);     // #3
 }
 ```
 
