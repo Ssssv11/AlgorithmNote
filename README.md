@@ -11877,7 +11877,7 @@ for(int i = 0; i < n; i++) {
 
 </br>
 
-- [516.最长会问子序列](DP/516.最长回文子序列.java) &emsp;[🔗](https://leetcode.cn/problems/longest-palindromic-subsequence/)
+- [516.最长回文子序列](DP/516.最长回文子序列.java) &emsp;[🔗](https://leetcode.cn/problems/longest-palindromic-subsequence/)
 
 ![vEyP61.png](https://s1.ax1x.com/2022/08/02/vEyP61.png)
 
