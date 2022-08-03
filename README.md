@@ -148,6 +148,9 @@ Blog : https://ssssv11.github.io
     - [最长公共子序列](#最长公共子序列)
     - [编辑距离](#编辑距离)
     - [子序列问题解题模板](#子序列问题解题模板)
+  - [空间压缩](#空间压缩)
+  - [经典动态规划](#经典动态规划)
+    - [最小路径和](#最小路径和)
 
 </br>
 
@@ -12009,6 +12012,414 @@ public int minInsertions(String s) {
 
 private int longestPalindromeSubseq(String s) {
     // 见上文
+}
+```
+
+</br>
+
+## 空间压缩
+
+动态规划技巧对于算法效率的提升非常可观，一般都能把指数级和阶乘级时间复杂度的算法优化成 `O(N^2)`。但是，动态规划求解的过程中也是可以进行阶段性优化的，如果认真观察某些动态规划问题的状态转移方程，就能够把它们解法的空间复杂度进一步降低，由 `O(N^2)` 降低到 `O(N)`。
+
+能够使用空间压缩技巧的动态规划都是二维 `dp` 问题。它的状态转移方程如果计算状态 `dp[i][j]` 需要的都是 `dp[i][j]` 相邻的状态，那么就可以使用空间压缩技巧，将二维的 `dp` 数组转化成一维，将空间复杂度从 `O(N^2)` 降低到 `O(N)`。
+
+如 [最长回文子序列](DP/1143.最长公共子序列.java) 中，最终的代码如下：
+
+```java
+public int longestPalindromeSubseq(String s) {
+    int n = s.length();
+    // dp 数组初始化为 0
+    int[][] dp = new int[n][n];
+
+    // base case
+    for (int i = 0; i < n; i++) {
+        dp[i][i] = 1;
+    }
+
+    // 反向遍历
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = i + 1; j < n; j++) {
+            if (s.charAt(i) == s.charAt(j)) {
+                dp[i][j] = 2 + dp[i + 1][j - 1];
+            } else {
+                dp[i][j] = Math.max(dp[i + 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+
+    return dp[0][n - 1];
+}
+```
+
+对 `dp[i][j]` 的更新，其实只依赖于 `dp[i+1][j-1]`, `dp[i][j-1]`, `dp[i+1][j]` 这三个状态：
+
+![vE26q1.png](https://s1.ax1x.com/2022/08/02/vE26q1.png)
+
+这就叫和 `dp[i][j]` 相邻。因此，计算 `dp[i][j]` 只需要这三个相邻状态。空间压缩的核心思路就是，将二维数组「投影」到一维数组：
+
+![vVOW4g.png](https://s1.ax1x.com/2022/08/03/vVOW4g.png)
+
+思路很直观，但也有一个明显的问题，图中 `dp[i][j-1]` 和 `dp[i+1][j-1]` 这两个状态处在同一列，而一维数组中只能容下一个，那么当计算 `dp[i][j]` 时，它们必然有一个会被另一个覆盖。
+
+这就是空间压缩的难点，以「最长回文子序列」问题举例，它的状态转移方程主要逻辑就是如下这段代码：
+
+```java
+for (int i = n - 2; i >= 0; i--) {
+    for (int j = i + 1; j < n; j++) {
+        // 状态转移方程
+        if (s[i] == s[j])
+            dp[i][j] = dp[i + 1][j - 1] + 2;
+        else
+            dp[i][j] = max(dp[i + 1][j], dp[i][j - 1]);
+    }
+}
+```
+
+想把二维 `dp` 数组压缩成一维，一般是把第一个维度，也就是 `i` 维度去掉，只剩下 `j` 维度。压缩后的一维 `dp` 数组就是之前二维 `dp` 数组的 `dp[i][..]` 那一行。
+
+先将上述代码进行改造，去掉 `i` 这个维度，把 `dp` 数组变成一维：
+
+```java
+for (int i = n - 2; i >= 0; i--) {
+    for (int j = i + 1; j < n; j++) {
+        // dp ?
+        if (s[i] == s[j])
+            dp[j] = dp[j - 1] + 2;
+        else
+            dp[j] = max(dp[j], dp[j - 1]);
+    }
+}
+```
+
+在代码中注释的位置，将要进行状态转移，更新 `dp[j]`：
+
+1. 在对 `dp[j]` 赋新值之前，`dp[j]` 对应着二维 `dp` 数组中的什么位置？
+
+2. `dp[j-1]` 对应着二维 `dp` 数组中的什么位置？
+
+**对于问题 1，在对** `dp[j]` **赋新值之前**，`dp[j]` **的值就是外层 for 循环上一次迭代算出来的值，也就是对应二维** `dp` **数组中** `dp[i+1][j]` **的位置**。
+
+**对于问题 2**，`dp[j-1]` **的值就是内层 for 循环上一次迭代算出来的值，也就是对应二维 dp 数组中** `dp[i][j-1]` **的位置**。
+
+这样就只剩下二维 `dp` 数组中的 `dp[i+1][j-1]` 不能直接从一维 `dp` 数组中得到：
+
+```java
+for (int i = n - 2; i >= 0; i--) {
+    for (int j = i + 1; j < n; j++) {
+        if (s[i] == s[j])
+            // dp[i][j] = dp[i+1][j-1] + 2;
+            dp[j] = ?? + 2;
+        else
+            // dp[i][j] = max(dp[i+1][j], dp[i][j-1]);
+            dp[j] = max(dp[j], dp[j - 1]);
+    }
+}
+```
+
+因为 for 循环遍历 `i` 和 `j` 的顺序为从左向右，从下向上，所以可以发现，在更新一维 `dp` 数组时，`dp[i+1][j-1]` 会被 `dp[i][j-1]` 覆盖掉，图中标出了这四个位置被遍历到的次序：
+
+![vVjPQs.png](https://s1.ax1x.com/2022/08/03/vVjPQs.png)
+
+那么如果想得到 `dp[i+1][j-1]`，就必须在它被覆盖之前用一个临时变量 `temp` 把它存起来，并把这个变量的值保留到计算 `dp[i][j]` 时。为了达到这个目的，结合上图，可以这样写代码：
+
+```java
+for (int i = n - 2; i >= 0; i--) {
+    // 存储 dp[i+1][j-1] 的变量
+    int pre = 0;
+    for (int j = i + 1; j < n; j++) {
+        int temp = dp[j];
+        if (s[i] == s[j])
+            // dp[i][j] = dp[i+1][j-1] + 2;
+            dp[j] = pre + 2;
+        else
+            dp[j] = max(dp[j], dp[j - 1]);
+        // 到下一轮循环，pre 就是 dp[i+1][j-1] 了
+        pre = temp;
+    }
+}
+```
+
+这样就解决了对状态转移方程的空间压缩。同时还需要对 base case 进行处理：
+
+```java
+// dp 数组初始化为 0
+int[][] dp = new int[n][n];
+
+// base case
+for (int i = 0; i < n; i++) {
+    dp[i][i] = 1;
+}
+```
+
+把 base case 投影到一维：
+
+![vVvW4O.png](https://s1.ax1x.com/2022/08/03/vVvW4O.png)
+
+二维 `dp` 数组中的 base case 全都落入了一维 `dp` 数组，不存在冲突和覆盖，所以直接写代码就行了：
+
+```java
+Arrays.fill(dp, 1);
+```
+
+至此，把 base case 和状态转移方程都进行了降维，实际上已经写出完整代码了：
+
+```java
+public int longestPalindromeSubseq(String s) {
+    int n = s.length();
+    // dp 数组初始化为 0
+    int[] dp = new int[n];
+    Arrays.fill(dp, 1);
+
+    for (int i = n - 2; i >= 0; i--) {
+        // 存储 dp[i+1][j-1] 的变量
+        int pre = 0;
+        for (int j = i + 1; j < n; j++) {
+            int temp = dp[j];
+            if (s.charAt(i) == s.charAt(j))
+                // dp[i][j] = dp[i+1][j-1] + 2;
+                dp[j] = pre + 2;
+            else
+                dp[j] = Math.max(dp[j], dp[j - 1]);
+            // 到下一轮循环，pre 就是 dp[i+1][j-1] 了
+            pre = temp;
+        }
+    }
+
+    return dp[n - 1];
+}
+```
+
+</br>
+
+## 经典动态规划
+
+### 最小路径和
+
+- [64.最小路径和](DP/64.最小路径和.java) &emsp;[🔗](https://leetcode.cn/problems/minimum-path-sum/)
+
+![vVzO1g.png](https://s1.ax1x.com/2022/08/03/vVzO1g.png)
+
+一般来说，让在二维矩阵中求最优化问题（最大值或者最小值），肯定需要递归 + 备忘录，也就是动态规划技巧。
+
+由于只能向右或向下移动，因此要到达右下角：
+
+![vZCtb9.png](https://s1.ax1x.com/2022/08/03/vZCtb9.png)
+
+只能经过 A 或 B。这样就可以把问题转化为从左上角走到 A 或 B 的最小路径长度了。因此可以使用动态规划来解决问。`dp` 函数的定义如下：
+
+**从左上角位置** `(0, 0)` **走到位置** `(i, j)` **的最小路径和为** `dp(grid, i, j)`。
+
+同时可以发现，`dp(grid, i, j)` 的值取决于 `dp(grid, i - 1, j)` 和 `dp(grid, i, j - 1)` 返回的值。这样就可以写出如下代码：
+
+```java
+int minPathSum(int[][] grid) {
+    int m = grid.length;
+    int n = grid[0].length;
+    // 计算从左上角走到右下角的最小路径和
+    return dp(grid, m - 1, n - 1);
+}
+
+int dp(int[][] grid, int i, int j) {
+    // base case
+    if(i == 0 && j == 0) {
+        return grid[0][0];
+    }
+
+    // 如果索引出界，返回一个很大的值，
+    // 保证在取 min 的时候不会被取到
+    if(i < 0 || j < 0) {
+        return Integer.MAX_VALUE;
+    }
+
+    // 左边和上面的最小路径和加上 grid[i][j]
+    // 就是到达 (i, j) 的最小路径和
+    return Math.min(dp[i][j - 1], dp[i - 1][j]) + grid[i][j];
+}
+```
+
+上述代码就完成了本题的主要逻辑。接下来判断是否存在重叠子问题：
+
+```java
+    int dp(int i, int j) {
+    dp(i - 1, j); // #1
+    dp(i, j - 1); // #2
+}
+```
+
+若要从 `dp(i, j)` 递归到 `dp(i - 1, j - 1)`，有两种方式：`dp(i, j) -> #1 -> #2` 或 `dp(i, j) -> #2 -> #1`。说明 `dp(i - 1, j - 1)` 会被重复计算，因此存在重叠子问题。可以使用备忘录来解决：
+
+```java
+int[][] memo;
+
+int minPathSum(int[][] grid) {
+    int m = grid.length;
+    int n = grid[0].length;
+
+    // 构造备忘录，初始值全部设为 -1
+    memo = new int[m][n];
+    for(int[] row : memo) {
+        Arrays.fill(row, - 1);
+    }
+
+    return dp(grid, m - 1, n - 1);
+}
+
+int dp(int[][] grid, int i, int j) {
+    // base case
+    if(i == 0 && j == 0) {
+        return grid[0][0];
+    }
+
+    if(i < 0 || j < 0) {
+        return Integer.MAX_VALUE;
+    }
+
+    if(memo[i][j] != -1) {
+        return memo[i][j];
+    }
+
+    memo[i][j] =  Math.min(dp[i][j - 1], dp[i - 1][j]) + grid[i][j];
+
+    return memo[i][j];
+}
+```
+
+至此，本题就解决了，时间复杂度和空间复杂度都是 `O(MN)`，标准的自顶向下动态规划解法。
+
+自底向上的迭代解法也类似，需要一个二维 `dp` 数组，定义如下：
+
+**从左上角位置** `(0, 0)` **走到位置** `(i, j)` **的最小路径和为** `dp[i][j]`。
+
+```java
+public int minPathSum(int[][] grid) {
+    int m = grid.length, n = grid[0].length;
+    int[][] dp = new int[m][n];
+
+    // base case
+    dp[0][0] = grid[0][0];
+    // 初始化从 [0,0] 到 [i,0] 的路径和
+    for (int i = 1; i < m; i++) {
+        dp[i][0] = dp[i - 1][0] + grid[i][0];
+    }
+    // 初始化从 [0,0] 到 [0,j] 的路径和
+    for (int j = 1; j < n; j++) {
+        dp[0][j] = dp[0][j - 1] + grid[0][j];
+    }
+
+    // 状态转移
+    for (int i = 1; i < m; i++) {
+        for (int j = 1; j < n; j++) {
+            // dp[i][j] = 左或上的路径和加本路径
+            dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1]) + grid[i][j];
+        }
+    }
+
+    return dp[m - 1][n - 1];
+}
+```
+
+这个解法的 base case 看起来和递归解法略有不同，但实际上是一样的。因为状态转移为下面这段代码：
+
+```java
+dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1]) + grid[i][j];
+```
+
+如果 `i` 或 `j` 等于 0 时，就会出现索引越界的错误。所以需要提前计算出 `dp[0][..]` 和 `dp[..][0]`，然后让 `i` 和 `j` 的值从 1 开始迭代。按照 `dp` 数组的定义，`dp[i][0] = sum(grid[0..i][0])`, `dp[0][j] = sum(grid[0][0..j])`，也就是如下代码：
+
+```java
+/**** base case ****/
+dp[0][0] = grid[0][0];
+
+for (int i = 1; i < m; i++)
+    dp[i][0] = dp[i - 1][0] + grid[i][0];
+
+for (int j = 1; j < n; j++)
+    dp[0][j] = dp[0][j - 1] + grid[0][j];        
+/*******************/
+```
+
+到这里，自底向上的迭代解法也解决了。
+
+</br>
+
+- [174.地下城游戏](DP/174.地下城游戏.java) &emsp;[🔗](https://leetcode.cn/problems/dungeon-game/)
+
+![vZVHSI.png](https://s1.ax1x.com/2022/08/03/vZVHSI.png)
+
+这道题乍一看与求 「最大路径和」题目非常相似，但这里所求的「最小的初始生命值」与它没有太大关系。如“在一条路径上需要先损失五十点血但能获得一百点血”需要的初始生命值比“在一条路径上需要损失先一点血且不能获得血”更多。
+
+**因此，关键不在于吃最多的血瓶，而是在于如何损失最少的生命值**。
+
+这类求最值的问题，肯定要借助动态规划技巧，要合理设计 `dp` 数组/函数的定义。`dp` 数组的定义：
+
+**从** `grid[i][j]` **到达终点（右下角）所需的最少生命值是** `dp[i, j]`。
+
+```java
+public int calculateMinimumHP(int[][] dungeon) {
+    int m = dungeon.length, n = dungeon[0].length;
+    // dp[i][j]：从 grid[i-1][j-1] 到达右下角所需的最小生命值为 dp[i][j]。
+    int[][] dp = new int[m + 1][n + 1];
+}
+```
+
+到达终点 `[m][n]` 时，若终点为血瓶，那么从 `[m - 1][n]` 或 `[m][n - 1]` 到达终点时至少还剩 1 点血；若终点为怪，那么到达终点时至少还剩 `-dungeon[m][n] + 1` 点血。
+
+由此可以得出 base case 同时初始化偏移位置的值：
+
+```java
+// 若右下角为怪，则生命值初始化为怪物血量+1，否则初始化为 1
+dp[m - 1][n - 1] = dungeon[m - 1][n - 1] < 0 ? -dungeon[m - 1][n - 1] + 1 : 1;
+
+for(int i = m; i >= 0; i--) {
+    for(int j = n; j >= 0; j--) {
+        // 最后一行一列为偏移
+        if (i == m || j == n) {
+            dp[i][j] = Integer.MAX_VALUE;
+            continue;
+        }
+    }
+}
+```
+
+对于 `dp[i][j]` 的值，可以由 `dp[i + 1][j]` 和 `dp[i][j + 1]` 推出：
+
+```java
+res = min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j];
+dp[i][j] = res > 0 ? res : 1;
+```
+
+它是由它右或下方的最小初始生命值推出的，若 `dp[i + 1][j]` 或 `dp[i][j + 1]` 减去当前位置的值为正则表示当前位置为怪，值应该等于 `res`；若为负，则表示当前位置为血瓶，因此 `dp[i][j]` 为 1 即可保证能到达该位置。
+
+完整代码：
+
+```java
+int calculateMinimumHP(int[][] dungeon) {
+    int m = dungeon.length, n = dungeon[0].length;
+    // dp[i][j]：从 grid[i-1][j-1] 到达右下角所需的最小生命值为 dp[i][j]。
+    int[][] dp = new int[m + 1][n + 1];
+
+    // base case
+    // 若右下角为怪，则生命值初始化为怪物血量+1，否则初始化为 1
+    dp[m - 1][n - 1] = dungeon[m - 1][n - 1] < 0 ? -dungeon[m - 1][n - 1] + 1 : 1;
+
+    for(int i = m; i >= 0; i--) {
+        for(int j = n; j >= 0; j--) {
+            // 最后一行一列为偏移
+            if (i == m || j == n) {
+                dp[i][j] = Integer.MAX_VALUE;
+                continue;
+            }
+            // 初始化过
+            if (i == m - 1 && j == n - 1) {
+                continue;
+            }
+
+            int res = Math.min(dp[i + 1][j], dp[i][j + 1]) - dungeon[i][j];
+            dp[i][j] = res <= 0 ? 1 : res;
+        }
+    }
+
+    return dp[0][0];
 }
 ```
 

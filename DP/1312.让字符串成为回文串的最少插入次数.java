@@ -1,3 +1,5 @@
+package DP;
+
 /*
  * @lc app=leetcode.cn id=1312 lang=java
  *
