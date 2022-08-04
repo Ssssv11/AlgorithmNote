@@ -151,6 +151,7 @@ Blog : https://ssssv11.github.io
   - [空间压缩](#空间压缩)
   - [经典动态规划](#经典动态规划)
     - [最小路径和](#最小路径和)
+    - [正则表达式](#正则表达式)
 
 </br>
 
@@ -12425,3 +12426,202 @@ int calculateMinimumHP(int[][] dungeon) {
 
 </br>
 
+### 正则表达式
+
+- [10.正则表达式匹配](DP/10.正则表达式匹配.java) &emsp;[🔗](https://leetcode.cn/problems/regular-expression-matching/)
+
+![veUsi9.png](https://s1.ax1x.com/2022/08/04/veUsi9.png)
+
+点号 `.` 可以匹配任意一个字符，星号 `*` 可以让之前的字符重复任意次数（包括 0 次）。如模式串 `".a\*b"` 就可以匹配文本 `"zaaab"`，也可以匹配 `"cb"`；模式串 `"a..b"` 可以匹配文本 `"amnb"`；而模式串 `".*"` 可以匹配任何文本。
+
+题目给定输入两个字符串 `s` 和 `p`，`s` 代表文本，`p` 代表模式串，判断模式串 `p` 是否可以匹配文本 `s`。可以假设模式串只包含小写字母和上述两种通配符且一定合法，不会出现 `*a` 或者 `b**` 这种不合法的模式串。点号通配符很好实现，`s` 中的任何字符只要遇到 `.` 通配符直接匹配即可。星号通配符不好实现，一旦遇到 `*` 通配符，前面的那个字符可以选择重复一次，可以重复多次，也可以一次都不出现。
+
+对于所有可能出现的情况，全部穷举一遍，只要有一种情况可以完成匹配，就认为 `p` 可以匹配 `s`。那么一旦涉及两个字符串的穷举，就应该想到动态规划的技巧了。
+
+`s` 和 `p` 相互匹配的过程大致是，两个指针 `i, j` 分别在 `s` 和 `p` 上移动，如果最后两个指针都能移动到字符串的末尾，那么久匹配成功，反之则匹配失败。如果不考虑 `*` 通配符，面对两个待匹配字符 `s[i]` 和 `p[j]` 只能判断它们是否匹配：
+
+```java
+boolean isMatch(String s, String p) {
+    int i = 0, j = 0;
+    while(i < s.length() && j < p.length()) {
+        if(s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') {
+            i++;
+            j++;
+        } else {
+            return false;
+        }
+    }
+    return i == j;
+}
+```
+
+当 `p[j + 1]` 为 `*` 通配符时，分情况讨论：
+
+1. 如果 `s[i] == p[j]`：
+   1. `p[j]` 有可能会匹配多个字符，如 `s = "aaa", p = "a*"`，那么 `p[0]` 会通过 `*` 匹配 3 个字符 `"a"`。
+   2. `p[i]` 有可能匹配 0 个字符，如 `s = "aa", p = "a*aa"`，由于后面的字符可以匹配 `s`，所以 `p[0]` 只能匹配 0 次。
+
+2. 如果 `s[i] != p[j]`，`p[j]` 只能匹配 0 次，然后看下一个字符是否能和 `s[i]` 匹配。如 `s = "aa", p = "b*aa"`，此时 `p[0]` 只能匹配 0 次。
+
+综上，可以把之前的代码针对 `*` 通配符进行一下改造：
+
+```java
+if(s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') {
+    // 匹配
+    if(j < p.length() - 1 && p.charAt(j + 1) == '*') {
+        // 有 * 通配符，匹配 0 次或者多次
+    } else {
+        // 无 * 通配符，匹配一次
+        i++;
+        j++;
+    }
+} else {
+    // 不匹配
+    if(j < p.length() - 1 && p.charAt(j + 1) == '*') {
+        // 有 * 通配符，只能匹配 0 次
+    } else {
+        // 无 * 通配符，无法继续匹配
+        return false;
+    }
+}
+```
+
+现在的问题是，遇到 `*` 通配符时，应该匹配 0 次还是匹配几次。这就是一个做「选择」的问题，要把所有可能的选择都穷举一遍才能得出结果。动态规划算法的核心就是「状态」和「选择」，「状态」就是 `i` 和 `j` 两个指针的位置，「选择」就是 `p[j]` 选择匹配几个字符。
+
+根据「状态」，可以定义一个 `dp` 函数：
+
+```java
+boolean dp(String s, int i, String p, int j)
+```
+
+`dp` 函数的定义如下：
+
+若 `dp(s, i, p, j) = true`，则表示 `s[i..]` 可以匹配 `p[j..]`；若 `dp(s, i, p, j) = false`，则表示 `s[i..]` 无法匹配 `p[j..]`。
+
+根据这个定义，答案就是 `i = 0, j = 0` 时 `dp` 函数的结果。可以根据之前的代码写出 `dp` 函数的主要逻辑：
+
+```java
+boolean dp(String s, int i, String p, int j) {
+    if(s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') {
+    // 匹配
+    if(j < p.length() - 1 && p.charAt(j + 1) == '*') {
+        // 有 * 通配符，匹配 0 次或者多次
+        return dp(s, i, p, j + 2) || dp(s, i + 1, p, j);
+    } else {
+        // 无 * 通配符，匹配一次
+        return dp(s, i + 1, p, j + 1);
+    }
+} else {
+    // 不匹配
+    if(j < p.length() - 1 && p.charAt(j + 1) == '*') {
+        // 有 * 通配符，只能匹配 0 次
+        return dp(s, i, p, j + 2);
+    } else {
+        // 无 * 通配符，无法继续匹配
+        return false;
+    }
+}
+}
+```
+
+一个 base case 是 `j == p.length()` 时，按照 `dp` 函数的定义，这意味着模式串 `p` 已经被匹配完了，那么应该看文本串 `s` 的匹配情况，如果 `s` 也恰好被匹配完，则说明匹配成功：
+
+```java
+if(j == p.length()) {
+    return i == s.length();
+}
+```
+
+另一个 base case 是 `i == s.length()` 时，按照 `dp` 函数的定义，这种情况意味着文本串 `s` 已经全部被匹配了，此时并不能根据 `j` 是否等于 `p.length()` 来判断是否完成匹配，只要 `p[j..]` 能够匹配空串，就可以算完成匹配。如 `s = "a", p = "ab*c*"`，当 `i` 走到 `s` 末尾时，`j` 并没有走到 `p` 的末尾，但是 `p` 依然可以匹配 `s`。
+
+```java
+int m = s.length(), n = p.length();
+
+if(i == m) {
+    if((n - j) % 2 == 1) {
+        return false;
+    }
+
+    for(; j + 1 < n; j += 2) {
+        if(p.charAt(j + 1) != '*'){
+            return false;
+        }
+    }
+}
+```
+
+根据以上思路，就可以写出完整的代码：
+
+```java
+boolean[][] memo;
+
+public boolean isMatch(String s, String p) {
+    int m = s.length(), n = p.length();
+    memo = new boolean[m][n];
+    for (int i = 0; i < m; i++) {
+        Arrays.fill(memo[i], false);
+    }
+
+    return dp(s, 0, p, 0);
+}
+
+boolean dp(String s, int i, String p, int j) {
+    int m = s.length(), n = p.length();
+
+    // base case
+    if (j == n) {
+        return i == m;
+    }
+
+    if (i == m) {
+        if ((n - j) % 2 == 1) {
+            return false;
+        }
+        for (; j + 1 < n; j += 2) {
+            if (p.charAt(j + 1) != '*') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    if (memo[i][j] != false) {
+        return memo[i][j];
+    }
+
+    boolean res = false;
+    if (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') {
+        if (j + 1 < n && p.charAt(j + 1) == '*') {
+            res = dp(s, i, p, j + 2) || dp(s, i + 1, p, j);
+        } else {
+            res = dp(s, i + 1, p, j + 1);
+        }
+    } else {
+        if (j + 1 < n && p.charAt(j + 1) == '*') {
+            res = dp(s, i, p, j + 2);
+        } else {
+            res = false;
+        }
+    }
+    memo[i][j] = res;
+    return res;
+
+}
+```
+
+代码中用了一个哈希表 `memo` 消除重叠子问题，因为正则表达算法的递归框架如下：
+
+```java
+boolean dp(String s, int i, String p, int j) {
+    dp(s, i, p, j + 2); // 1
+    dp(s, i + 1, p, j); // 2
+    dp(s, i + 1, p, j + 2); // 3
+    dp(s, i, p, j + 2); // 4
+}
+```
+
+如果从 `dp(s, i, p, j)` 得到 `dp(s, i + 2, p, j + 2)`，至少有两条路径：`1 -> 2 -> 2` 和 `3 -> 3`，那么就说明 `(i + 2, j + 2)` 这个状态存在重复，这就说明存在重叠子问题。
+
+动态规划的时间复杂度为「状态的总数」*「每次递归花费的时间」，本题中状态的总数就是 `i` 和 `j` 的组合，也就是 `M * N`（`M` 为 `s` 的长度，`N` 为 `p` 的长度）；递归函数 `dp` 中没有循环（base case 中的不考虑，因为 base case 的触发次数有限），所以一次递归花费的时间为常数。二者相乘，总的时间复杂度为 `O(MN)`。空间复杂度就是备忘录 `memo` 的大小，即 `O(MN)`。
+
+</br>
