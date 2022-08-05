@@ -11616,10 +11616,10 @@ if (s1[i] == s2[j]) {
     i, j 同时向前移动
 }
 else {
-    三选一：
-        插入（insert）
-        删除（delete）
-        替换（replace）
+    三选一: 
+        插入 (insert)
+        删除 (delete)
+        替换 (replace)
 }
 ```
 
