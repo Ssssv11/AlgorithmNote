@@ -153,6 +153,7 @@ Blog : https://ssssv11.github.io
     - [最小路径和](#最小路径和)
     - [正则表达式](#正则表达式)
     - [高楼扔鸡蛋](#高楼扔鸡蛋)
+    - [打家劫舍问题](#打家劫舍问题)
 
 </br>
 
@@ -12935,3 +12936,182 @@ for(int m = 1; dp[K][m] < N; m++) {
 
 </br>
 
+### 打家劫舍问题
+
+- [198.打家劫舍](DP/198.打家劫舍.java) &emsp;[🔗](https://leetcode-cn.com/problems/house-robber/)
+
+![vueRJS.png](https://s1.ax1x.com/2022/08/06/vueRJS.png)
+
+从左向右走过一排房子，在每间房子前都有「抢或不抢」两种选择。如果抢了这间房子，那么就不能抢相邻的下一间房子，只能从下下间开始做选择；如果不抢这件房子，那么可以走到下一间前，继续做选择。当走过了最后一间房子后就没有房子抢了，能抢到的钱是 0（base case）。
+
+以上的逻辑明确了「状态」和「选择」：面前房子的索引就是状态，抢和不抢就是选择。
+
+![vum7Xd.png](https://s1.ax1x.com/2022/08/06/vum7Xd.png)
+
+在两个选择中，每次都选更大的结果，最后得到的就是最多能抢到的 money：
+
+```java
+public int rob(int[] nums) {
+    return dp(nums, 0);
+}
+
+// 返回 nums[start..] 能抢到的最大值
+private int dp(int[] nums, int start) {
+    if(start >= nums.length) {
+        return 0;
+    }
+
+    int res = Math.max(
+        // 不抢，去下家
+        dp(nums, start + 1),
+        // 抢，去下下家
+        dp(nums, start + 2) + nums[start]
+    );
+
+    return res;
+}
+```
+
+明确了状态转移，就可以发现对于同一 `start` 位置是存在重叠子问题的：
+
+![vunMu9.png](https://s1.ax1x.com/2022/08/06/vunMu9.png)
+
+有多种方法可以走到这个位置，可以使用备忘录进行优化：
+
+```java
+private int[] memo;
+
+public int rob(int[] nums) {
+    memo = new int[nums.length];
+    Arrays.fill(memo, -1);
+    return dp(nums, 0);
+}
+
+private int dp(int[] nums, int start) {
+    if(start >= nums.length) {
+        return 0;
+    }
+
+    if(memo[start] != -1) {
+        return memo[start];
+    }
+
+    int res = Math.max(
+        dp(nums, start + 1),
+        dp(nums, start + 2) + nums[start]
+    );
+
+    memo[start] = res;
+    return res;
+}
+```
+
+这就是自顶向下的动态规划解法，也可以略作修改，写出自底向上的解法：
+
+```java
+public int rob(int[] nums) {
+    int n = nums.length;
+    // dp[i] = x 表示：从第 i 间房子开始抢最多能抢到 x 
+    // base case: dp[n] = 0
+    int[] dp = new int[n + 2];
+
+    for(int i = n - 1; i >= 0; i--) {
+        dp[i] = Math.max(dp[i + 1], nums[i] + dp[i + 2]);
+    }
+    return dp[0];
+}
+```
+
+发现状态转移只和 `dp[i]` 最近的两个状态有关，所以可以进一步优化，将空间复杂度降低到 `O(1)`：
+
+```java
+public int rob(int[] nums) {
+    int n = nums.length;
+
+    int cur = 0, pre = 0;
+    int res = 0;
+
+    for(int i = n - 1; i >= 0; i--) {
+        res = Math.max(cur, nums[i] + pre);
+        pre = cur;
+        cur = res;
+    }
+    return res;
+}
+```
+
+</br>
+
+- [213.打家劫舍II](DP/213.打家劫舍-ii.java) &emsp;[🔗](https://leetcode.cn/problems/house-robber-ii/)
+
+![vuuP2D.png](https://s1.ax1x.com/2022/08/06/vuuP2D.png)
+
+与上提不同的是，这里的房子围成了一个圈。也就是说，现在第一间房子和最后一间房子也相当于是相邻的，不能同时抢。比如输入数组 `nums=[2,3,2]`，算法返回的结果应该是 3 而不是 4，因为开头和结尾不能同时被抢。
+
+首先，首尾房间不能同时被抢，那么只可能有三种不同情况：要么都不被抢；要么第一间房子被抢最后一间不抢；要么最后一间房子被抢第一间不抢。
+
+![vuu6d1.png](https://s1.ax1x.com/2022/08/06/vuu6d1.png)
+
+只需要比较这三种情况中的最大值，就可以得到最终答案。对于情况一来说，它被包含在情况二和三中，因此不需要单独考虑。
+
+```java
+public int rob(int[] nums) {
+    int n = nums.length;
+    if(n == 1) {
+        return nums[0];
+    }
+
+    return Math.max(
+        robRange(nums, 0, n - 2),
+        robRange(nums, 1, n - 1)
+    );
+}
+
+// 仅计算闭区间 [start,end] 的最优结果
+private int robRange(int[] nums, int start, int end) {
+    int n = nums.length;
+    int cur = 0, pre = 0;
+    int res = 0;
+
+    for(int i = end; i >= start; i--) {
+        res = Math.max(cur, nums[i] + pre);
+        pre = cur;
+        cur = res;
+    }
+    return res;
+}
+```
+
+</br>
+
+- [337.打家劫舍III](DP/337.打家劫舍-iii.java) &emsp;[🔗](https://leetcode.cn/problems/house-robber-iii/)
+
+![vuKuwR.png](https://s1.ax1x.com/2022/08/06/vuKuwR.png)
+
+这里的房屋排列变成了二叉树结构。整体的思路完全没变，还是做抢或者不抢的选择，去收益较大的选择：
+
+```java
+Map<TreeNode, Integer> memo = new HashMap<>();
+
+public int rob(TreeNode root) {
+    if (root == null) {
+        return 0;
+    }
+    if (memo.containsKey(root)) {
+        return memo.get(root);
+    }
+
+    int doRob = root.val
+            + (root.left == null ? 0 : rob(root.left.left) + rob(root.left.right))
+            + (root.right == null ? 0 : rob(root.right.left) + rob(root.right.right));
+
+    int doGo = rob(root.left) + rob(root.right);
+    int res = Math.max(doRob, doGo);
+    memo.put(root, res);
+    return res;
+}
+```
+
+这道题就解决了，时间复杂度 `O(N)`，`N` 为数的节点数。
+
+</br>
