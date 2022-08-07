@@ -154,6 +154,7 @@ Blog : https://ssssv11.github.io
     - [正则表达式](#正则表达式)
     - [高楼扔鸡蛋](#高楼扔鸡蛋)
     - [打家劫舍问题](#打家劫舍问题)
+    - [买卖股票](#买卖股票)
 
 </br>
 
@@ -13115,3 +13116,234 @@ public int rob(TreeNode root) {
 这道题就解决了，时间复杂度 `O(N)`，`N` 为数的节点数。
 
 </br>
+
+### 买卖股票
+
+- [188.买卖股票的最佳时机IV](DP/188.买卖股票的最佳时机-iv.java) &emsp;[🔗](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iv/)
+
+![vKEzBq.png](https://s1.ax1x.com/2022/08/07/vKEzBq.png)
+
+买卖股票的几个问题都是这个问题的简化形式，因此只需要研究此问题即可。
+
+</br>
+
+对于这道题，每天都有三种「选择」：买入、卖出、无操作，用 `buy`, `sell`, `rest` 表示这三种选择。并不是每天都可以任意选择这三种选择的，因为 `sell` 必须在 `buy` 之后，`buy` 必须在 `sell` 之后。那么 `rest` 操作还应该分两种状态，一种是 `buy` 之后的 `rest`（持有了股票），一种是 `sell` 之后的 `rest`（没有持有股票）。而且还有交易次数 `k` 的限制，就是 `buy` 只能在 `k > 0` 的前提下操作。
+
+这个问题的「状态」有三个，第一个是天数，第二个是允许交易的最大次数，第三个是当前的持有状态（即之前说的 `rest` 的状态，不妨用 1 表示持有，0 表示未持有）。用一个三维数组就可以装下这几种状态的全部组合：
+
+```python
+dp[i][k][0 or 1]
+0 <= i <= n - 1, 1 <= k <= K
+n 为天数，大 K 为交易数的上限，0 和 1 代表是否持有股票。
+此问题共 n × K × 2 种状态，全部穷举就能搞定。
+
+for 0 <= i < n:
+    for 1 <= k <= K:
+        for s in {0, 1}:
+            dp[i][k][s] = max(buy, sell, rest)
+```
+
+可以用自然语言描述出每一个状态的含义，如 `dp[3][2][1]` 的含义是：今天是第三天，现在手上持有着股票，至今最多进行 2 次交易。`dp[2][3][0]` 的含义：今天是第二天，现在手上没有持有股票，至今最多进行 3 次交易。
+
+想求的最终答案是 `dp[n - 1][K][0]`，即最后一天，最多允许 `K` 次交易，最多获得多少利润（`dp[n - 1][K][1]` 代表到最后一天手上还持有股票，`dp[n - 1][K][0]` 表示最后一天手上的股票已经卖出去了，很显然后者得到的利润一定大于前者）。
+
+完成了「状态」的穷举需要思考每种「状态」有哪些「选择」，应该如何更新「状态」。只看「持有状态」，可以画个状态转移图：
+
+![vKVEv9.png](https://s1.ax1x.com/2022/08/07/vKVEv9.png)
+
+通过这个图可以很清楚地看到每种状态（0 和 1）是如何转移而来的。根据这个图写状态转移方程：
+
+```java
+dp[i][k][0] = max(dp[i-1][k][0], dp[i-1][k][1] + prices[i])
+```
+
+解释：今天没有持有股票有两种可能，从这两种可能中求最大利润：
+
+1. 昨天就没有持有，且截至昨天最大交易次数限制为 `k`；然后今天选择 `rest`，所以今天还是没有持有，最大交易次数限制依然为 `k`。
+
+2. 昨天持有股票，且截至昨天最大交易次数限制为 `k`；但是今天 `sell` 了，所以今天没有持有股票了，最大交易次数限制依然为 `k`。
+
+```Java
+dp[i][k][1] = max(dp[i-1][k][1], dp[i-1][k-1][0] - prices[i])
+```
+
+解释：今天持有着股票，最大交易次数限制为 `k`，那么对于昨天来说，有两种可能，从这两种可能中求最大利润：
+
+1. 昨天就持有着股票，且截至昨天最大交易次数限制为 `k`；然后今天选择 `rest`，所以今天还持有着股票，最大交易次数限制依然为 `k`。
+
+2. 昨天没有持有，且截至昨天最大交易次数限制为 `k - 1`；但今天选择 `buy`，所以今天就持有股票了，最大交易次数限制为 `k`。
+
+> 牢记「状态」的定义，状态 `k` 的定义并不是「已进行的交易次数」，而是「最大交易次数的上限限制」。如果确定今天进行一次交易，且要保证截至今天最大交易次数上限为 `k`，那么昨天的最大交易次数上限必须是 `k - 1`。
+
+如果 `buy`，就要从利润中减去 `prices[i]`，如果 `sell`，就要给利润增加 `prices[i]`。今天的最大利润就是这两种可能选择中较大的那个。注意 `k` 的限制，在选择 `buy` 时相当于开启了一次交易，那么对于昨天来说，交易次数的上限 `k` 应该减小 `1`。
+
+这样就完成了状态转移方程。接下来定义 base case：
+
+```java
+dp[-1][...][0] = 0
+解释：因为 i 是从 0 开始，所以 i = -1 意味着还没有开始，这时利润是 0。
+
+dp[-1][...][1] = -infinity
+解释：还没开始时不可能持有股票。
+因为算法要求一个最大值，所以初始值设为一个最小值，方便取最大值。
+
+dp[...][0][0] = 0
+解释：因为 k 是从 1 开始的，所以 k = 0 意味着根本不允许交易，这时利润是 0。
+
+dp[...][0][1] = -infinity
+解释：不允许交易的情况下不可能持有股票。
+因为算法要求一个最大值，所以初始值设为一个最小值，方便取最大值。
+```
+
+把上面的状态转移方程总结一下：
+
+```java
+base case：
+dp[-1][...][0] = dp[...][0][0] = 0
+dp[-1][...][1] = dp[...][0][1] = -infinity
+
+状态转移方程：
+dp[i][k][0] = max(dp[i-1][k][0], dp[i-1][k][1] + prices[i])
+dp[i][k][1] = max(dp[i-1][k][1], dp[i-1][k-1][0] - prices[i])
+```
+
+现在完整的框架已经完成，下面开始具体化。
+
+</br>
+
+- [121. 买卖股票的最佳时机](DP/121.买卖股票的最佳时机.java) &emsp;[🔗](https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/)
+
+![vKVrvj.png](https://s1.ax1x.com/2022/08/07/vKVrvj.png)
+
+直接套用状态转移方程，根据 base case，可以做一些化简：
+
+```java
+dp[i][1][0] = max(dp[i-1][1][0], dp[i-1][1][1] + prices[i])
+dp[i][1][1] = max(dp[i-1][1][1], dp[i-1][0][0] - prices[i]) 
+            = max(dp[i-1][1][1], -prices[i])
+解释：k = 0 的 base case，所以 dp[i-1][0][0] = 0。
+
+发现 k 都是 1，不会改变，即 k 对状态转移已经没有影响了。
+可以进行进一步化简去掉所有 k：
+dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
+dp[i][1] = max(dp[i-1][1], -prices[i])
+```
+
+即代码：
+
+```java
+int n = prices.length;
+int[][] dp = new int[n][2];
+for(int i = 0; i < n; i++) {
+    dp[i][0] = Math.max(dp[i-1][0], dp[i-1][1] + prices[i]);
+    dp[i][1] = Math.max(dp[i-1][1], -prices[i]);
+}
+
+return dp[n-1][0];
+```
+
+显然 `i = 0` 时 `i - 1` 是不合法的索引，这是因为没有对 `i` 的 base case 进行处理，可以这样给一个特化处理：
+
+```java
+if (i - 1 == -1) {
+    dp[i][0] = 0;
+    // 根据状态转移方程可得：
+    //   dp[i][0] 
+    // = max(dp[-1][0], dp[-1][1] + prices[i])
+    // = max(0, -infinity + prices[i]) = 0
+
+    dp[i][1] = -prices[i];
+    // 根据状态转移方程可得：
+    //   dp[i][1] 
+    // = max(dp[-1][1], dp[-1][0] - prices[i])
+    // = max(-infinity, 0 - prices[i]) 
+    // = -prices[i]
+    continue;
+}
+```
+
+但其实不需要用整个 `dp` 数组，只需要一个变量储存相邻的那个状态就足够了，这样可以把空间复杂度降到 `O(1)`:
+
+```java
+// 原始版本
+public int maxProfit(int[] prices) {
+    int n = prices.length;
+    int[][] dp = new int[n][2];
+
+    for(int i = 0; i < n; i++) {
+        if(i - 1 == -1) {
+            dp[i][0] = 0;
+            dp[i][1] = -prices[i];
+            continue;
+        }
+        dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+        dp[i][1] = Math.max(dp[i - 1][1], -prices[i]);
+    }
+
+    return dp[n - 1][0];
+}
+
+// 空间复杂度优化版本
+int maxProfit_k_1(int[] prices) {
+    int n = prices.length;
+    int dp0 = 0, dp1 = Integer.MIN_VALUE;
+    for (int i = 0; i < n; i++) {
+        dp0 = Math.max(dp0, dp1 + prices[i]);
+        dp1 = Math.max(dp1, -prices[i]);
+    }
+    return dp0;
+}
+```
+
+</br>
+
+- [122.买卖股票的最佳时机II](DP/122.买卖股票的最佳时机-ii.java) &emsp;[🔗](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/)
+
+![vKeW3F.png](https://s1.ax1x.com/2022/08/07/vKeW3F.png)
+
+这道题的特点在于没有给出交易总数 `k` 的限制，也就相当于 `k` 为正无穷。如果 `k` 为正无穷，那么就可以认为 `k` 和 `k - 1` 是一样的。可以这样改写框架：
+
+```java
+dp[i][k][0] = max(dp[i-1][k][0], dp[i-1][k][1] + prices[i])
+dp[i][k][1] = max(dp[i-1][k][1], dp[i-1][k-1][0] - prices[i])
+            = max(dp[i-1][k][1], dp[i-1][k][0] - prices[i])
+
+发现数组中的 k 已经不会改变了，也就是说不需要记录 k 这个状态了：
+dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
+dp[i][1] = max(dp[i-1][1], dp[i-1][0] - prices[i])
+```
+
+直接翻译成代码：
+
+```java
+// 原始版本
+public int maxProfit(int[] prices) {
+    int n = prices.length;
+    int[][] dp = new int[n][2];
+
+    for(int i = 0; i < n; i++) {
+        if(i - 1 == -1) {
+            dp[i][0] = 0;
+            dp[i][1] = -prices[i];
+            continue;
+        }
+
+        dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+        dp[i][1] = Math.max(dp[i - 1][1], dp[i - 1][0] - prices[i]);
+    }
+
+    return dp[n - 1][0];
+}
+
+// 空间复杂度优化版本
+int maxProfit(int[] prices) {
+    int n = prices.length;
+    int dp0 = 0, dp1 = Integer.MIN_VALUE;
+    for (int i = 0; i < n; i++) {
+        int temp = dp0;
+        dp0 = Math.max(dp0, dp1 + prices[i]);
+        dp1 = Math.max(dp1, temp - prices[i]);
+    }
+    return dp0;
+}
+```
