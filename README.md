@@ -155,6 +155,12 @@ Blog : https://ssssv11.github.io
     - [高楼扔鸡蛋](#高楼扔鸡蛋)
     - [打家劫舍问题](#打家劫舍问题)
     - [买卖股票](#买卖股票)
+  - [有限状态机之 KMP 字符匹配算法](#有限状态机之-kmp-字符匹配算法)
+    - [KMP 算法概述](#kmp-算法概述)
+    - [状态机概述](#状态机概述)
+    - [构建状态转移图](#构建状态转移图)
+    - [代码实现](#代码实现)
+    - [总结](#总结)
 
 </br>
 
@@ -13347,3 +13353,672 @@ int maxProfit(int[] prices) {
     return dp0;
 }
 ```
+
+</br>
+
+- [309.最佳买卖股票时机含冷冻期](DP/309.最佳买卖股票时机含冷冻期.java) &emsp;[🔗](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-cooldown/)
+
+![vMcckj.png](https://s1.ax1x.com/2022/08/08/vMcckj.png)
+
+和上一道题相同，但每次 `sell` 后要等一天才能继续交易，只要把这个特点融入上一题的状态转移方程即可：
+
+```java
+dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
+dp[i][1] = max(dp[i-1][1], dp[i-2][0] - prices[i])
+解释：第 i 天选择 buy 的时候，要从 i-2 的状态转移，而不是 i-1 。
+```
+
+翻译为代码：
+
+```java
+// 原始版本
+public int maxProfit(int[] prices) {
+    int n = prices.length;
+    int[][] dp = new int[n][2];
+
+    for(int i = 0; i < n; i++) {
+        if(i - 1 == -1) {
+            // base case 1
+            dp[i][0] = 0;
+            dp[i][1] = -prices[i];
+            continue;
+        }
+        if(i - 2 == -1) {
+            // base case 2
+            dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+            // i - 2 小于 0 时根据状态转移方程推出对应 base case
+            dp[i][1] = Math.max(dp[i - 1][1], -prices[i]);
+            // dp[i][1] 
+            // = max(dp[i-1][1], dp[-1][0] - prices[i])
+            // = max(dp[i-1][1], 0 - prices[i])
+            // = max(dp[i-1][1], -prices[i])
+            continue;
+        }
+
+        dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+        dp[i][1] = Math.max(dp[i - 1][1], dp[i - 2][0] - prices[i]);
+    }
+
+    return dp[n - 1][0];
+}
+
+// 空间复杂度优化版本
+int maxProfit(int[] prices) {
+    int n = prices.length;
+    int dp0 = 0, dp1 = Integer.MIN_VALUE;
+    int pre = 0; // 代表 dp[i-2][0]
+    for (int i = 0; i < n; i++) {
+        int temp = dp0;
+        dp0 = Math.max(dp0, dp1 + prices[i]);
+        dp1 = Math.max(dp1, pre - prices[i]);
+        pre = temp;
+    }
+    return dp0;
+}
+```
+
+</br>
+
+- [714.买卖股票的最佳时机含手续费](DP/714.买卖股票的最佳时机含手续费.java) &emsp;[🔗](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/)
+
+![vMIf3Q.png](https://s1.ax1x.com/2022/08/08/vMIf3Q.png)
+
+相较于 [#122](DP/122.买卖股票的最佳时机-ii.java) 本题多添加了一个手续费的条件。每次交易要支付手续费，只要把手续费从利润中减去即可，改写方程：
+
+```java
+dp[i][0] = max(dp[i - 1][0], dp[i - 1][1] + prices[i])
+dp[i][1] = max(dp[i - 1][1], dp[i - 1][0] - prices[i] - fee)
+解释：相当于买入股票的价格升高了。
+可以选择在买入或卖出时减去手续费
+```
+
+> 如果直接把 `fee` 放在第一个式子里减会有一些测试用例无法通过，错误原因是整型溢出而不是思路问题。一种解决方案是把代码中的 `int` 类型都改成 `long` 类型，避免 `int` 的整型溢出。
+
+翻译成代码，注意状态转移方程改变后 base case 也要做出对应改变：
+
+```java
+// 原始版本
+public int maxProfit(int[] prices, int fee) {
+    int n = prices.length;
+    int[][] dp = new int[n][2];
+
+    for(int i = 0; i < n; i++) {
+        if(i - 1 == -1) {
+            dp[i][0] = 0;
+            dp[i][1] = -prices[i] - fee;
+            // dp[i][1]
+            // = max(dp[i - 1][1], dp[i - 1][0] - prices[i] - fee)
+            // = max(dp[-1][1], dp[-1][0] - prices[i] - fee)
+            // = max(-inf, 0 - prices[i] - fee)
+            // = -prices[i] - fee
+            continue;
+        }
+
+        dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+        dp[i][1] = Math.max(dp[i - 1][1], dp[i - 1][0] - prices[i] - fee);
+    }
+
+    return dp[n - 1][0];
+}
+
+// 空间复杂度优化版本
+int maxProfit_with_fee(int[] prices, int fee) {
+    int n = prices.length;
+    int dp0 = 0, dp1 = Integer.MIN_VALUE;
+    for (int i = 0; i < n; i++) {
+        int temp = dp0;
+        dp0 = Math.max(dp0, dp1 + prices[i]);
+        dp1 = Math.max(dp1, temp - prices[i] - fee);
+    }
+    return dp0;
+}
+```
+
+</br>
+
+- [123.买卖股票的最佳时机III](DP/123.买卖股票的最佳时机-iii.java) &emsp;[🔗](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)
+
+![vMoBPU.png](https://s1.ax1x.com/2022/08/08/vMoBPU.png)
+
+题目规定 `k = 2`。前面几道题中都与 `k` 的关系不大：要么 `k` 是正无穷，状态转移和 `k` 没关系；要么 `k = 1`，跟 `k = 0` 这个 base case 挨得近没有存在感。写出其状态转移方程：
+
+```java
+dp[i][k][0] = max(dp[i - 1][k][0], dp[i - 1][k][1] + prices[i])
+dp[i][k][1] = max(dp[i - 1][k][1], dp[i - 1][k - 1][0] - prices[i])
+```
+
+按照之前的代码，可能会这样写代码（错误的）：
+
+```java
+int k = 2;
+int[][][] dp = new int[n][k + 1][2];
+for (int i = 0; i < n; i++) {
+    if (i - 1 == -1) {
+        // 处理 base case
+        dp[i][k][0] = 0;
+        dp[i][k][1] = -prices[i];
+        continue;
+    }
+    dp[i][k][0] = Math.max(dp[i - 1][k][0], dp[i - 1][k][1] + prices[i]);
+    dp[i][k][1] = Math.max(dp[i - 1][k][1], dp[i - 1][k - 1][0] - prices[i]);
+}
+return dp[n - 1][k][0];
+```
+
+之前的解法其实都在穷举所有状态，只是之前的题目中 `k` 都被化简掉了。
+
+比如[第一题](DP/121.买卖股票的最佳时机.java)，`k = 1` 时的代码框架：
+
+```java
+int n = prices.length;
+int[][] dp = new int[n][2];
+for (int i = 0; i < n; i++) {
+    dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+    dp[i][1] = Math.max(dp[i - 1][1], -prices[i]);
+}
+return dp[n - 1][0];
+```
+
+但当 `k = 2` 时，由于没有消掉 `k` 的影响，所以必须要对 `k` 进行穷举：
+
+```java
+public int maxProfit(int[] prices) {
+    int n = prices.length, maxK = 2;
+    int[][][] dp = new int[n][maxK + 1][2];
+
+    for(int i = 0; i < n; i++) {
+        for(int k = maxK; k >= 1; k--) {
+            if(i - 1 == -1) {
+                dp[i][k][0] = 0;
+                dp[i][k][1] = -prices[i];
+                continue;
+            }
+            dp[i][k][0] = Math.max(dp[i - 1][k][0], dp[i - 1][k][1] + prices[i]);
+            dp[i][k][1] = Math.max(dp[i - 1][k][1], dp[i - 1][k - 1][0] - prices[i]);
+        }
+    }
+
+    return dp[n - 1][maxK][0];
+}
+```
+
+> `k` 的 base case 是 0，按理说应该从 `k = 1, k++` 这样穷举状态 k 才对。
+
+这是因为 `dp[i][k][..]` 不会依赖 `dp[i][k - 1][..]`，而是依赖 `dp[i - 1][k - 1][..]`，而 `dp[i - 1][..][..]` 是已经计算出来的，所以不管是 `k = maxK, k--`，还是 `k = 1, k++` 都是可以得出正确答案的。但买股票初始的「状态」是从第 0 天开始，而且还没有进行过买卖，所以最大交易次数限制 `k` 应该是 `maxK`；而随着「状态」的推移会进行交易，那么交易次数上限 `k` 应该不断减少，这样 `k = maxK, k--` 的方式是比较合乎实际场景的。
+
+当然，这里 `k` 取值范围比较小，所以也可以不用 for 循环，直接把 `k = 1 和 2` 的情况全部列举出来：
+
+```java
+// 状态转移方程：
+// dp[i][2][0] = max(dp[i-1][2][0], dp[i-1][2][1] + prices[i])
+// dp[i][2][1] = max(dp[i-1][2][1], dp[i-1][1][0] - prices[i])
+// dp[i][1][0] = max(dp[i-1][1][0], dp[i-1][1][1] + prices[i])
+// dp[i][1][1] = max(dp[i-1][1][1], -prices[i])
+
+// 空间复杂度优化版本
+int maxProfit(int[] prices) {
+    // base case
+    int dp_i10 = 0, dp_i11 = Integer.MIN_VALUE;
+    int dp_i20 = 0, dp_i21 = Integer.MIN_VALUE;
+    for (int price : prices) {
+        dp_i20 = Math.max(dp_i20, dp_i21 + price);
+        dp_i21 = Math.max(dp_i21, dp_i10 - price);
+        dp_i10 = Math.max(dp_i10, dp_i11 + price);
+        dp_i11 = Math.max(dp_i11, -price);
+    }
+    return dp_i20;
+}
+```
+
+</br>
+
+- [188.买卖股票的最佳时机IV](DP/188.买卖股票的最佳时机-iv.java) &emsp; [🔗](https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-iv/)
+
+![vM71Xj.png](https://s1.ax1x.com/2022/08/08/vM71Xj.png)
+
+这是买卖股票问题的最抽象的问题，即 `k` 可以是题目给定的任何数的情况。
+
+有了上一题 `k = 2` 的铺垫，把上一题的 `k = 2` 换成题目输入的 `k` 即可：
+
+```java
+public int maxProfit(int k, int[] prices) {
+    int n = prices.length;
+    if (n <= 0) {
+        return 0;
+    }
+    int[][][] dp = new int[n][k + 1][2];
+
+    for (int i = 0; i < n; i++) {
+        for (int j = k; j >= 1; j--) {
+            if (i - 1 == -1) {
+                dp[i][j][0] = 0;
+                dp[i][j][1] = -prices[i];
+                continue;
+            }
+            dp[i][j][0] = Math.max(dp[i - 1][j][0], dp[i - 1][j][1] + prices[i]);
+            dp[i][j][1] = Math.max(dp[i - 1][j][1], dp[i - 1][j - 1][0] - prices[i]);
+        }
+    }
+
+    return dp[n - 1][k][0];
+}
+```
+
+同时，一次交易由买入和卖出构成，至少需要两天。所以说有效的限制 `k` 应该不超过 `n/2`，如果超过就没有约束作用了，相当于 `k` 没有限制的情况，而这种情况是之前解决过的。
+
+所以可以直接把之前的代码重用：
+
+```java
+public int maxProfit(int k, int[] prices) {
+    int n = prices.length;
+    if (n == 0) {
+        return 0;
+    }
+    if (k > n / 2) {
+        // 复用之前交易次数 k 没有限制的情况
+        return maxProfit_k_inf(prices);
+    }
+
+    // base case：
+    // dp[-1][...][0] = dp[...][0][0] = 0
+    // dp[-1][...][1] = dp[...][0][1] = -infinity
+    int[][][] dp = new int[n][k + 1][2];
+    // k = 0 时的 base case
+    for (int i = 0; i < n; i++) {
+        dp[i][0][1] = Integer.MIN_VALUE;
+        dp[i][0][0] = 0;
+    }
+
+    for (int i = 0; i < n; i++)
+        for (int j = k; j >= 1; j--) {
+            if (i - 1 == -1) {
+                // 处理 i = -1 时的 base case
+                dp[i][j][0] = 0;
+                dp[i][j][1] = -prices[i];
+                continue;
+            }
+            dp[i][j][0] = Math.max(dp[i - 1][j][0], dp[i - 1][j][1] + prices[i]);
+            dp[i][j][1] = Math.max(dp[i - 1][j][1], dp[i - 1][j - 1][0] - prices[i]);
+        }
+
+    return dp[n - 1][k][0];
+}
+
+private int maxProfit_k_inf(int[] prices) {
+    int n = prices.length;
+    int[][] dp = new int[n][2];
+    for (int i = 0; i < n; i++) {
+        if (i - 1 == -1) {
+            // base case
+            dp[i][0] = 0;
+            dp[i][1] = -prices[i];
+            continue;
+        }
+        dp[i][0] = Math.max(dp[i - 1][0], dp[i - 1][1] + prices[i]);
+        dp[i][1] = Math.max(dp[i - 1][1], dp[i - 1][0] - prices[i]);
+    }
+    return dp[n - 1][0];
+}
+```
+
+至此，6 道题目通过一个状态转移方程全部解决。
+
+![vMqHER.png](https://s1.ax1x.com/2022/08/08/vMqHER.png)
+
+</br>
+
+## 有限状态机之 KMP 字符匹配算法
+
+- [28.实现strStr](String/28.实现-str-str.java) &emsp;[🔗](https://leetcode.cn/problems/implement-strstr/)
+
+[![vQVsrd.png](https://s1.ax1x.com/2022/08/08/vQVsrd.png)](https://imgtu.com/i/vQVsrd)
+
+约定用 `pat` 表示模式串，长度为 `M`，`txt` 表示文本串，长度为 `N`。KMP 算法是在 `txt` 中查找子串 `pat`，如果存在，返回这个子串的起始索引，否则返回 -1。
+
+</br>
+
+### KMP 算法概述
+
+力扣第 28 题[「实现 strStr」](https://leetcode.cn/problems/implement-strstr/)就是字符串匹配问题，暴力的字符串匹配算法很容易写，看一下它的运行逻辑：
+
+```java
+// 暴力匹配（伪码）
+int search(String pat, String txt) {
+    int M = pat.length;
+    int N = txt.length;
+    for (int i = 0; i <= N - M; i++) {
+        int j;
+        for (j = 0; j < M; j++) {
+            if (pat[j] != txt[i+j])
+                break;
+        }
+        // pat 全都匹配了
+        if (j == M) return i;
+    }
+    // txt 中不存在 pat 子串
+    return -1;
+}
+```
+
+对于暴力算法，如果出现不匹配字符，同时回退 `txt` 和 `pat` 的指针，嵌套 for 循环，时间复杂度 `O(MN)`，空间复杂度 `O(1)`。最主要的问题是，如果字符串中重复的字符比较多，该算法就显得笨拙。
+
+如 `txt = "aaacaaab", pat = "aaab"`：
+
+![image_0.9979294809129076.gif](https://s2.loli.net/2022/08/08/W14qgS5aFpBx7C3.gif)
+
+明显在 `pat` 中根本没有字符 `c`，就没必要回退指针 `i`，暴力解法明显多做了很多不必要的操作。
+
+KMP 算法的不同之处在于，它会花费空间来记录一些信息，在上述情况中就会显得很聪明：
+
+![image_0.6390086203950585.gif](https://s2.loli.net/2022/08/08/x1AYGJ2jtbvIqa7.gif)
+
+再如类似的 `txt = "aaaaaaab", pat = "aaab"`，暴力解法还会和上面一样回退指针 `i`，而 KMP 算法会更聪明：
+
+![image_0.9981991472380289.gif](https://s2.loli.net/2022/08/08/p52IQagJKmOs7uX.gif)
+
+因为 KMP 算法知道字符 `b` 之前的字符 `a` 都是匹配的，所以每次只需要比较字符 `b` 是否被匹配就行了。
+
+KMP 算法永不回退 `txt` 的指针 `i`，不走回头路（不会重复扫描 `txt`），而是借助 `dp` 数组中储存的信息把 `pat` 移到正确的位置继续匹配，时间复杂度只需 `O(N)`，用空间换时间，所以可以认为它是一种动态规划算法。
+
+KMP 算法的难点在于，如何计算 `dp` 数组中的信息、如何根据这些信息正确地移动 `pat` 的指针。这就需要确定有限状态自动机来辅助了。
+
+还有一点需要明确的是：计算 `dp` 数组只和 `pat` 串有关。也是说只要给出 `pat`，就能通过这个模式串计算出 `dp` 数组，然后使用该 `dp` 数组在 `O(N)` 时间内去匹配不同的 `txt`。
+
+具体来说，比如上文举的两个例子：
+
+```java
+txt1 = "aaacaaab" 
+pat = "aaab"
+txt2 = "aaaaaaab" 
+pat = "aaab"
+```
+
+虽然 `txt` 不同，但 `pat` 是一样的，所以 KMP 算法使用的 `dp` 数组是同一个。因此设计 KMP 算法时能够更加优雅：
+
+```java
+public class KMP {
+    private int[][] dp;
+    private String pat;
+
+    public KMP(String pat) {
+        this.pat = pat;
+        // 通过 pat 构建 dp 数组
+        // 需要 O(M) 时间
+    }
+
+    public int search(String txt) {
+        // 借助 dp 数组去匹配 txt
+        // 需要 O(N) 时间
+    }
+}
+```
+
+这样，当需要用同一 `pat` 去匹配不同 `txt` 时，就不需要浪费时间构造 `dp` 数组了：
+
+```java
+KMP kmp = new KMP("aaab");
+int pos1 = kmp.search("aaacaaab"); //4
+int pos2 = kmp.search("aaaaaaab"); //4
+```
+
+</br>
+
+### 状态机概述
+
+我们可以认为 `pat` 的匹配就是状态的转移。比如当 `pat = “ABABC”`：
+
+![vQKSEj.png](https://s1.ax1x.com/2022/08/08/vQKSEj.png)
+
+如上图，圆圈内的数字就是状态，状态 0 是起始状态，状态 5（`pat.length`）是终止状态。开始匹配时 `pat` 处于起始状态，一旦转移到终止状态，就说明在 `txt` 中找到了 `pat`。如当前处于状态 2，就说明字符 `“AB”` 被匹配：
+
+![vQKUIA.png](https://s1.ax1x.com/2022/08/08/vQKUIA.png)
+
+另外，处于不同状态时 `pat` 状态转移的行为也不同。假设现在匹配到了状态 4，如果遇到字符 `A` 就应该转移到状态 3，遇到字符 `C` 就应该转移到状态 5，如果遇到字符 `B` 就应该转移到状态 0：
+
+![vQKIMT.png](https://s1.ax1x.com/2022/08/08/vQKIMT.png)
+
+如用变量 `j` 表示指向当前状态的指针，当前 `pat` 匹配到了状态 4：
+
+![vQMW0e.png](https://s1.ax1x.com/2022/08/08/vQMW0e.png)
+
+如果遇到了字符 `“A”`，根据箭头指示，转移到状态 3 最优：
+
+![vQ1SyV.png](https://s1.ax1x.com/2022/08/08/vQ1SyV.png)
+
+如果遇到了字符 `“B”`，根据箭头指示，只能转移到状态 0：
+
+![vQl4zt.png](https://s1.ax1x.com/2022/08/08/vQl4zt.png)
+
+如果遇到了字符 `“C”`，根据箭头指示，应该转移到终止状态 5，这也就意味着匹配完成：
+
+![vQlQGn.png](https://s1.ax1x.com/2022/08/08/vQlQGn.png)
+
+当然还可能遇到其他字符，如 `Z`，但是显然应该转移到起始状态 0，因为 `pat` 中根本都没有字符 `Z`。这里为了清晰起见，画状态图时把其他字符转移到状态 0 的箭头省略，只画 `pat` 中出现的字符的状态转移：
+
+![vQ1BkQ.png](https://s1.ax1x.com/2022/08/08/vQ1BkQ.png)
+
+KMP 算法最关键的步骤就是构造这个状态转移图。要确定状态转移的行为需要明确两个变量，一个是当前的匹配状态，另一个是遇到的字符；确定了这两个变量后，就可以知道这个情况下应该转移到哪个状态。
+
+为了描述状态转移图，定义一个二维 `dp` 数组，它的含义如下：
+
+```java
+dp[j][c] = next
+0 <= j < M，代表当前的状态
+0 <= c < 256，代表遇到的字符（ASCII 码）
+0 <= next <= M，代表下一个状态
+
+dp[4]['A'] = 3 表示：
+当前是状态 4，如果遇到字符 A，
+pat 应该转移到状态 3
+
+dp[1]['B'] = 2 表示：
+当前是状态 1，如果遇到字符 B，
+pat 应该转移到状态 2
+```
+
+根据 `dp` 数组的定义和状态转移的过程，可以写出 KMP 算法的 `search` 函数代码：
+
+```java
+public int search(String txt) {
+    int M = pat.length();
+    int N = txt.length();
+    // pat 的初始态为 0
+    int j = 0;
+    for (int i = 0; i < N; i++) {
+        // 当前是状态 j，遇到字符 txt[i]，
+        // pat 应该转移到的状态
+        j = dp[j][txt.charAt(i)];
+        // 如果达到终止态，返回匹配开头的索引
+        if (j == M) return i - M + 1;
+    }
+    // 没到达终止态，匹配失败
+    return -1;
+}
+```
+
+</br>
+
+### 构建状态转移图
+
+要确定状态转移的行为，必须明确两个变量，一个是当前的匹配状态，另一个是遇到的字符，现在已经根据这个逻辑确定了 `dp` 数组的含义，那么构造 `dp` 数组的框架：
+
+```python
+for 0 <= j < M: # 状态
+    for 0 <= c < 256: # 字符
+        dp[j][c] = next
+```
+
+对于 `next` 状态，如果遇到的字符 `c` 和 `pat[j]` 匹配，状态就应该向前推进一个，也就是说 `next = j + 1`，不妨称这种情况为状态推进：
+
+![vQ3Wvt.png](https://s1.ax1x.com/2022/08/08/vQ3Wvt.png)
+
+如果字符 `c` 和 `pat[j]` 不匹配，状态就要回退（或者原地不动），不妨称这种情况为状态重启：
+
+![vQ3bCj.png](https://s1.ax1x.com/2022/08/08/vQ3bCj.png)
+
+那么该如何得知在哪个状态重启呢？解答这个问题前再定义一个名字：影子状态，用变量 `X` 表示。所谓影子状态，就是和当前状态具有相同的前缀。比如下面这种情况：
+
+![vQ3jK0.png](https://s1.ax1x.com/2022/08/08/vQ3jK0.png)
+
+当前状态 `j = 4`，其影子状态为 `X = 2`，它们都有相同的前缀 `“AB”`。因为状态 `X` 和状态 `j` 存在相同的前缀，所以当状态 `j` 准备进行状态重启的时候（遇到的字符 `c` 和 `pat[j]` 不匹配），可以通过 `X` 的状态转移图来获得最近的重启位置。
+
+比如说刚才的情况，如果状态 `j` 遇到一个字符 `“A”`。首先只有遇到 `“C”` 才能推进状态，遇到 `“A”` 只能进行状态重启。状态 `j` 会把这个字符委托给状态 `X` 处理，也就是 `dp[j]['A'] = dp[X]['A']`：
+
+![vQ8PPJ.png](https://s1.ax1x.com/2022/08/08/vQ8PPJ.png)
+
+因为既然 `j` 已经确定字符 `“A”` 无法推进状态，只能回退，而且 KMP 就是要尽可能少的回退，以免多余的计算。那么 `j` 就可以去寻找与自己具有相同前缀的 `X`，如果 `X` 遇见 `“A”` 可以进行「状态推进」，那就转移过去，因为这样回退最少。
+
+当然，如果遇到的字符是 `“B”`，状态 `X` 也不能进行「状态推进」，只能回退，`j` 只要跟着 `X` 指引的方向回退就行了：
+
+![vQ8diQ.png](https://s1.ax1x.com/2022/08/08/vQ8diQ.png)
+
+因为 `X` 永远跟在 j 的身后，状态 `X` 如何转移，在之前就已经算出来了。动态规划算法也是这样利用过去的结果解决现在的问题。
+
+细化一下刚才的框架代码：
+
+```python
+int X # 影子状态
+for 0 <= j < M:
+    for 0 <= c < 256:
+        if c == pat[j]:
+            # 状态推进
+            dp[j][c] = j + 1
+        else: 
+            # 状态重启
+            # 委托 X 计算重启位置
+            dp[j][c] = dp[X][c] 
+```
+
+</br>
+
+### 代码实现
+
+现在就剩下一个问题：如何得到影子状态 `X`。先直接看完整代码：
+
+```java
+public class KMP {
+    private int[][] dp;
+    private String pat;
+
+    public KMP(String pat) {
+        this.pat = pat;
+        int M = pat.length();
+        // dp[状态][字符] = 下个状态
+        dp = new int[M][256];
+        // base case
+        dp[0][pat.charAt(0)] = 1;
+        // 影子状态 X 初始为 0
+        int X = 0;
+        // 当前状态 j 从 1 开始
+        for (int j = 1; j < M; j++) {
+            for (int c = 0; c < 256; c++) {
+                if (pat.charAt(j) == c) 
+                    dp[j][c] = j + 1;
+                else 
+                    dp[j][c] = dp[X][c];
+            }
+            // 更新影子状态
+            X = dp[X][pat.charAt(j)];
+        }
+    }
+
+    public int search(String txt) {...}
+}
+```
+
+先解释一下这一行代码：
+
+```java
+// base case
+dp[0][pat.charAt(0)] = 1;
+```
+
+这行代码是 base case，只有遇到 `pat[0]` 这个字符才能使状态从 0 转移到 1，遇到其它字符还是停留在状态 0（Java 默认初始化数组全为 0）。
+
+影子状态 `X` 是先初始化为 0，然后随着 `j` 的前进而不断更新的。下面看看到底应该如何更新影子状态 `X`：
+
+```java
+int X = 0;
+for (int j = 1; j < M; j++) {
+    ...
+    // 更新影子状态
+    // 当前是状态 X，遇到字符 pat[j]，
+    // pat 应该转移到哪个状态
+    X = dp[X][pat.charAt(j)];
+}
+```
+
+更新 `X` 和 `search` 函数中更新状态 `j` 的过程非常相似：
+
+```java
+int j = 0;
+for (int i = 0; i < N; i++) {
+    // 当前是状态 j，遇到字符 txt[i]，
+    // pat 应该转移到哪个状态
+    j = dp[j][txt.charAt(i)];
+    ...
+}
+```
+
+其中的原理非常微妙，注意代码中 for 循环的变量初始值，可以这样理解：后者是在 `txt` 中匹配 `pat`，前者是在 `pat` 中匹配 `pat[1..end]`，状态 `X` 总是落后状态 `j` 一个状态，与 `j` 具有最长的相同前缀。另外，构建 `dp` 数组是根据 base case `dp[0][..]` 向后推演。因此可以认为 KMP 算法就是一种动态规划算法。
+
+至此，KMP 算法的核心完成了，完整代码：
+
+```java
+public class KMP {
+    private int[][] dp;
+    private String pat;
+
+    public KMP(String pat) {
+        this.pat = pat;
+        int M = pat.length();
+        // dp[状态][字符] = 下个状态
+        dp = new int[M][256];
+        // base case
+        dp[0][pat.charAt(0)] = 1;
+        // 影子状态 X 初始为 0
+        int X = 0;
+        // 构建状态转移图
+        for (int j = 1; j < M; j++) {
+            for (int c = 0; c < 256; c++)
+                dp[j][c] = dp[X][c];
+            dp[j][pat.charAt(j)] = j + 1;
+            // 更新影子状态
+            X = dp[X][pat.charAt(j)];
+        }
+    }
+
+    public int search(String txt) {
+        int M = pat.length();
+        int N = txt.length();
+        // pat 的初始态为 0
+        int j = 0;
+        for (int i = 0; i < N; i++) {
+            // 计算 pat 的下一个状态
+            j = dp[j][txt.charAt(i)];
+            // 到达终止态，返回结果
+            if (j == M) return i - M + 1;
+        }
+        // 没到达终止态，匹配失败
+        return -1;
+    }
+}
+```
+
+</br>
+
+### 总结
+
+传统的 KMP 算法是使用一个一维数组 `next` 记录前缀信息，而本文是使用一个二维数组 `dp` 以状态转移的角度解决字符匹配问题，但是空间复杂度仍然是 `O(256M) = O(M)`。
+
+在 `pat` 匹配 `txt` 的过程中，只要明确了「当前处在哪个状态」和「遇到的字符是什么」这两个问题，就可以确定应该转移到哪个状态（推进或回退）。对于一个模式串 `pat`，其总共就有 `M` 个状态，对于 ASCII 字符，总共不会超过 256 种。所以就构造一个数组 `dp[M][256]` 来包含所有情况，并且明确 `dp` 数组的含义：
+
+`dp[j][c] = next` 表示，当前是状态 `j`，遇到了字符 `c`，应该转移到状态 `next`。
+
+对于如何构建这个 `dp` 数组，需要一个辅助状态 `X`，它永远比当前状态 `j` 落后一个状态，拥有和 `j` 最长的相同前缀，给它起名叫「影子状态」。
+
+在构建当前状态 `j` 的转移方向时，只有字符 `pat[j]` 才能使状态推进（`dp[j][pat[j]] = j + 1`）；而对于其他字符只能进行状态回退，应该去找影子状态 `X` 判断应该回退到哪里（`dp[j][other] = dp[X][other]`，其中 `other` 是除了 `pat[j]` 之外所有字符）。
+
+对于影子状态 `X`，我们把它初始化为 0，并且随着 `j` 的前进进行更新，更新的方式和 `search` 过程更新 `j` 的过程非常相似（`X = dp[X][pat[j]]`）。
+
+</br>
