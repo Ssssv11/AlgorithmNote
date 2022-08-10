@@ -166,6 +166,11 @@ Blog : https://ssssv11.github.io
     - [子集背包问题](#子集背包问题)
     - [完全背包问题](#完全背包问题)
     - [回溯算法与动态规划](#回溯算法与动态规划)
+  - [贪心算法](#贪心算法)
+    - [区间调度问题](#区间调度问题)
+    - [跳跃游戏](#跳跃游戏)
+  - [分治算法](#分治算法)
+    - [运算优先级](#运算优先级)
 
 </br>
 
@@ -14558,5 +14563,418 @@ int subsets(int[] nums, int sum) {
     return dp[sum];
 }
 ```
+
+</br>
+
+## 贪心算法
+
+贪心算法可以认为是动态规划算法的一个特例，相比动态规划，使用贪心算法需要满足更多的条件（贪心选择性质），但是效率比动态规划要高。
+
+比如一个算法问题使用暴力解法需要指数级时间，如果能使用动态规划消除重叠子问题，就可以降到多项式级别的时间，如果满足贪心选择性质，那么可以进一步降低时间复杂度，达到线性级别的。
+
+贪心选择性质简单说就是：每一步都做出一个局部最优的选择，最终的结果就是全局最优。这是一种特殊性质，其实只有一部分问题拥有这个性质。
+
+</br>
+
+### 区间调度问题
+
+- [435.无重叠区间](DP/435.无重叠区间.java) &emsp;[🔗](https://leetcode.cn/problems/non-overlapping-intervals/)
+
+![v3ld39.png](https://s1.ax1x.com/2022/08/10/v3ld39.png)
+
+这个问题有许多看起来不错的贪心思路，却都不能得到正确答案。如：
+
+每次选择可选区间中开始最早的，但可能存在某些区间开始很早却很长，使得会错过一些短的区间。或每次选择可选区间中最短的、选择出现冲突最少的...这些方案都能很容易举出反例，不是正确的方案。
+
+正确的思路可以分为以下三步：
+
+1. 从区间集合 `intvs` 中选择一个区间 `x`，这个 `x` 是在当前所有区间中结束最早的（`end` 最小）。
+
+2. 把所有与 `x` 区间相交的区间从区间集合 `intvs` 中删除。
+
+3. 重复步骤 1 和 2，直到 `intvs` 为空为止。之前选出的 `x` 就是最大不相交子集。
+
+把这个思路实现成算法可以按每个区间的 `end` 数值升序排序，这样处理后实现步骤 1 和步骤 2 都方便很多，如下图所示：
+
+![image_0.19901523904934781.gif](https://s2.loli.net/2022/08/10/zKCPkc7iQZYLjFr.gif)
+
+对于步骤 1，由于预先按照 `end` 排了序，所以选择 `x` 是很容易的。关键在于，如何去除与 `x` 相交的区间并选择下一轮循环的 `x`。不难发现所有与 `x` 相交的区间必然会与 `x` 的 `end` 相交；如果一个区间不与 `x` 的 `end` 相交，那么它的 `start` 必须要大于（或等于）`x` 的 `end`：
+
+![v31zzd.png](https://s1.ax1x.com/2022/08/10/v31zzd.png)
+
+代码如下：
+
+```java
+public int intervalSchedule(int[][] intvs) {
+    if(intvs.length == 0) {
+        return 0;
+    }
+    // 按 end 升序排序
+    Arrays.sort(intvs, (a, b) -> Integer.compare(a[1] - b[1]));
+    // 至少有一个区间不相交
+    int count = 1;
+    // 排序后，第一个区间就是 x
+    int xEnd = intvs[0][1];
+    for(int[] interval : intvs) {
+        int start = interval[0];
+        if(start >= xEnd) {
+            // 找到下一个选择的区间c
+            count++;
+            xEnd = interval[1];
+        }
+    }
+
+    return count;
+}
+```
+
+这样就能够求出最多有几个区间不会重叠了，因此剩下的就是本题中需要删除的区间：
+
+```java
+int eraseOverlapIntervals(int[][] intervals) {
+    int n = intervals.length;
+    return n - intervalSchedule(intervals);
+}
+```
+
+</br>
+
+- [452.用最少数量的箭引爆气球](DP/452.用最少数量的箭引爆气球.java) &emsp;[🔗](https://leetcode.cn/problems/minimum-number-of-arrows-to-burst-balloons/)
+
+![v33rFO.png](https://s1.ax1x.com/2022/08/10/v33rFO.png)
+
+这个问题和区间调度算法一模一样。如果最多有 `n` 个不重叠的区间，那么就至少需要 `n` 个箭头穿透所有区间：
+
+![v33blj.png](https://s1.ax1x.com/2022/08/10/v33blj.png)
+
+只是在 `intervalSchedule` 算法中，如果两个区间的边界触碰，不算重叠；而按照这道题目的描述，箭头如果碰到气球的边界气球也会爆炸，所以说相当于区间的边界触碰也算重叠：
+
+```java
+int findMinArrowShots(int[][] intvs) {
+    // ...
+
+    for (int[] interval : intvs) {
+        int start = interval[0];
+        //  >= 改成 >
+        if (start > xEnd) {
+            count++;
+            xEnd = interval[1];
+        }
+    }
+    return count;
+}
+```
+
+</br>
+
+### 跳跃游戏
+
+- [55.跳跃游戏](DP/55.跳跃游戏.java) &emsp;[🔗](https://leetcode.cn/problems/jump-game/)
+
+![v3Gtq1.png](https://s1.ax1x.com/2022/08/10/v3Gtq1.png)
+
+贪心算法作为特殊的动态规划也是让求最值。这道题表面上不是求最值，但可以稍微修改问题：
+
+通过题目中的跳跃规则，最多能跳多远？如果能够越过最后一格，返回 true，否则返回 false。
+
+贪心思路：
+
+```java
+boolean canJump(int[] nums) {
+    int n = nums.length;
+    if(n == 1) {
+        return true;
+    }
+    // 初始化最远距离
+    int farthest = nums[0];
+    
+    for(int i = 0; i <= farthest; i++) {
+        // 在最远距离内不断计算能跳到的最远距离
+        farthest = Math.max(farthest, i + nums[i]);
+        if(farthest >= n - 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+```
+
+![v3Ywge.png](https://s1.ax1x.com/2022/08/10/v3Ywge.png)
+
+每一步都计算一下从当前位置最远能够跳到哪里，然后和一个全局最优的最远位置 `farthest` 做对比，通过每一步的最优解，更新全局最优解，这就是贪心。
+
+</br>
+
+- [45.跳跃游戏II](DP/45.跳跃游戏-ii.java) &emsp;[🔗](https://leetcode.cn/problems/jump-game-ii/)
+
+![v3GuV0.png](https://s1.ax1x.com/2022/08/10/v3GuV0.png)
+
+问题变成保证一定可以跳到最后一格，最少要跳多少次才能到终点。可以采用自顶向下递归的动态规划思路，定义一个 `dp` 函数：
+
+```java
+// 定义：从索引 p 跳到最后一格，至少需要 dp(nums, p) 步
+int dp(int[] nums, int p);
+```
+
+想求的结果就是 `dp(nums, 0)`，base case 就是当 `p` 超过最后一格时，不需要跳跃：
+
+```java
+if (p >= nums.length - 1) {
+    return 0;
+}
+```
+
+根据动态规划框架，可以暴力穷举所有可能的跳法，通过备忘录 `memo` 消除重叠子问题，取其中的最小值最为最终答案：
+
+```java
+int[] memo;
+
+public int jump(int[] nums) {
+    int n = nums.length;
+    // 备忘录初始化为 n，因为从 0 跳到 n - 1 最多 n - 1 步
+    memo = new int[n];
+    Arrays.fill(memo, n);
+
+    return dp(nums, 0);
+}
+
+// 定义：从索引 p 跳到最后一格，至少需要 dp(nums, p) 步
+private int dp(int[] nums, int p) {
+    int n = nums.length;
+    // base case
+    if (p >= n - 1) {
+        return 0;
+    }
+
+    if(memo[p] != n) {
+        return memo[p];
+    }
+
+    int steps = nums[p];
+    // 可以选择跳 1 - steps 步...
+    for(int i = 1; i <= steps; i++) {
+        // 穷举每一个选择
+        // 计算每一个子问题的结果
+        int subProblem = dp(nums, p + i);
+        // 取其中最小的作为最终结果
+        memp[p] = Math.min(memo[p], subProblem + 1);
+    }
+    
+    return memo[p];
+}
+```
+
+状态就是当前所站立的索引 `p`，选择就是可以跳出的步数。该算法的时间复杂度是「递归深度 × 每次递归需要的时间复杂度」，即 `O(N^2)`，无法通过所有用例。
+
+贪心算法比动态规划多一个贪心选择性质。动态规划思路需要穷举所有子问题，然后取其中最小的作为结果。核心的代码框架：
+
+```java
+    int steps = nums[p];
+    for (int i = 1; i <= steps; i++) {
+        int subProblem = dp(nums, p + i);
+        res = min(subProblem + 1, res);
+    }
+```
+
+for 循环中会陷入递归计算子问题，这是动态规划时间复杂度高的根本原因。但其实不需要「递归地」计算出每一个子问题的结果然后求最值。只需要判断哪一个选择最具有「潜力」即可：
+
+![v3aBJP.png](https://s1.ax1x.com/2022/08/10/v3aBJP.png)
+
+比如上图这种情况，若在索引 0 处，则可以向前跳 1，2 或 3 步，显然应该跳 2 步到索引 2，因为 `nums[2]` 的可跳跃区域涵盖了索引区间 `[3..6]`，比其他的都大。如果想求最少的跳跃次数，那么往索引 2 跳必然是最优的选择。
+
+这就是贪心选择性质，我们不需要「递归地」计算出所有选择的具体结果然后比较求最值，而只需要做出那个最有「潜力」，看起来最优的选择即可。
+
+```java
+public int jump(int[] nums) {
+    int n = nums.length;
+    int end = 0, farthest = 0;
+    int jumps = 0;
+
+    for(int i = 0; i < n - 1; i++) {
+        farthest = Math.max(farthest, i + nums[i]);
+        if(end == i) {
+            jumps++;
+            end = farthest;
+        }
+    }
+    
+    return jumps;
+}
+```
+
+`i` 和 `end` 标记了可以选择的跳跃步数，`farthest` 标记了所有选择 `[i..end]` 中能够跳到的最远距离，`jumps` 记录了跳跃次数。
+
+![v3wwgf.png](https://s1.ax1x.com/2022/08/10/v3wwgf.png)
+
+时间复杂度 `O(N)`，空间复杂度 `O(1)`。
+
+</br>
+
+## 分治算法
+
+最典型的分治算法就是归并排序了，核心逻辑如下：
+
+```java
+void sort(int[] nums, int lo, int hi) {
+    int mid = (lo + hi) / 2;
+    /*  分  */
+    // 对数组的两部分分别排序
+    sort(nums, lo, mid);
+    sort(nums, mid + 1, hi);
+
+    /*  治  */
+    // 合并两个排好序的子数组
+    merge(nums, lo, mid, hi);
+}
+```
+
+「对数组排序」是一个可以运用分治思想的算法问题，只要先把数组的左半部分排序，再把右半部分排序，最后把两部分合并，就是对整个数组排序。
+
+</br>
+
+### 运算优先级
+
+- [241.为运算表达式设计优先级](DP/241.为运算表达式设计优先级.java) &emsp;[🔗](https://leetcode.cn/problems/different-ways-to-add-parentheses/)
+
+![v3BZf1.png](https://s1.ax1x.com/2022/08/10/v3BZf1.png)
+
+解决本题的关键有两点：
+
+1. **不要思考整体，而是聚焦局部，只看一个运算符**。
+
+这一点类似于解决二叉树系列问题只要思考每个节点需要做什么，而不要思考整棵树需要做什么。
+
+2. **明确递归函数的定义是并利用好函数的定义**。
+
+比如输入这样一个算式：
+
+```java
+1 + 2 * 3 - 4 * 5
+```
+
+问这个算式有几种加括号的方式。我们只需要思考如果不让括号嵌套（即只加一层括号），有几种加括号的方式：
+
+```java
+(1) + (2 * 3 - 4 * 5)
+(1 + 2) * (3 - 4 * 5)
+(1 + 2 * 3) - (4 * 5)
+(1 + 2 * 3 - 4) * (5)
+```
+
+就是按照运算符进行分割，给每个运算符的左右两部分加括号，这就是第一个关键点，不要考虑整体，而是聚焦每个运算符。
+
+以上面的第三种情况为例：`(1 + 2 * 3) - (4 * 5)`。
+
+用减号 `-` 作为分隔，把原算式分解成两个算式 `1 + 2 * 3` 和 `4 * 5`。这一步就是把原问题进行了「分」，然后要「治」。
+
+`1 + 2 * 3` 可以有两种加括号的方式，分别是：
+
+```java
+(1) + (2 * 3) = 7
+(1 + 2) * (3) = 9
+```
+
+或者可以写成这种形式：`1 + 2 * 3 = [7, 9]`。而 `4 * 5` 只有一种加括号方式 `4 * 5 = [20]`。
+
+这样就可以通过上述结果推导出 `(1 + 2 * 3) - (4 * 5)` 有两种加括号方式，可以得到两种不同结果：
+
+```java
+9 - 20 = -11
+7 - 20 = -13
+```
+
+如何得出 `1 + 2 * 3 = [7, 9]` 就是第二个关键点，明确函数的定义并利用这个函数定义：
+
+```
+// 定义：计算算式 input 所有可能的运算结果
+List<Integer> diffWaysToCompute(String input);
+```
+
+对于 `(1 + 2 * 3) - (4 * 5)` 这个例子的计算逻辑其实就是这段代码：
+
+```java
+List<Integer> diffWaysToCompute("(1 + 2 * 3) - (4 * 5)") {
+    List<Integer> res = new LinkedList<>();
+    /*  分  */
+    List<Integer> left = diffWaysToCompute("1 + 2 * 3");
+    List<Integer> right = diffWaysToCompute("4 * 5");
+
+    /*  治  */
+    for (int a : left) {
+        for (int b : right) {
+            res.add(a - b);
+        }
+    }
+
+    return res;
+}
+```
+
+每个运算符都可以把原问题分割成两个子问题：
+
+```java
+(1) + (2 * 3 - 4 * 5)
+(1 + 2) * (3 - 4 * 5)
+(1 + 2 * 3) - (4 * 5)
+(1 + 2 * 3 - 4) * (5)
+```
+
+穷举上述的每一种情况：
+
+```java
+List<Integer> diffWaysToCompute(String input) {
+    List<Integer> res = new LinkedList<>();
+    for (int i = 0; i < input.length(); i++) {
+        char c = input.charAt(i);
+        // 扫描算式 input 中的运算符
+        if (c == '-' || c == '*' || c == '+') {
+            /*  分  */
+            // 以运算符为中心，分割成两个字符串，分别递归计算
+            List<Integer> left = diffWaysToCompute(input.substring(0, i));
+            List<Integer> right = diffWaysToCompute(input.substring(i + 1));
+
+            /*  治  */
+            // 通过子问题的结果，合成原问题的结果
+            for (int a : left) {
+                for (int b : right) {
+                    if (c == '+') {
+                        res.add(a + b);
+                    } else if (c == '-') {
+                        res.add(a - b);
+                    } else if (c == '*') {
+                        res.add(a * b);
+                    }
+                }
+            }
+        }
+    }
+
+    // base case
+    // 如果 res 为空，说明算式是一个数字，没有运算符
+    if (res.isEmpty()) {
+        res.add(Integer.parseInt(input));
+    }
+    return res;
+}
+```
+
+扫描输入的算式 `input`，每当遇到运算符就进行分割，递归计算出结果后，根据运算符来合并结果。
+
+这就是典型的分治思路，先「分」后「治」，先按照运算符将原问题拆解成多个子问题，然后通过子问题的结果来合成原问题的结果。
+
+一个重点在这段代码：
+
+```java
+// base case
+// 如果 res 为空，说明算式是一个数字，没有运算符
+if (res.isEmpty()) {
+    res.add(Integer.parseInt(input));
+}
+```
+
+递归函数必须有个 base case 用来结束递归，这段代码就是分治算法的 base case，代表着「分」到什么时候可以开始「治」。显然当算式中不存在运算符时就可以结束。当算式中不存在运算符时，就不会触发 if 语句，也就不会给 `res` 中添加任何元素。因此以 `res.isEmpty()` 作为判断条件。
+
+解决上述算法题利用了分治思想，以每个运算符作为分割点，把复杂问题分解成小的子问题，递归求解子问题，然后再通过子问题的结果计算出原问题的结果。
 
 </br>
