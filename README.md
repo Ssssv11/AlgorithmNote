@@ -2895,7 +2895,7 @@ private void backtrack(int[] nums, int start) {
 
 - [77.组合](BackTrack/77.组合.java) &emsp;[🔗](https://leetcode.cn/problems/combinations/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/23/091cf832094996db.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/091cf832094996db.png)
 
 返回范围 `[1, n]` 中所有可能的 `k` 个数的组合，大小为 `k` 的所有组合，就是所有大小为 `k` 的子集。
 
@@ -2945,7 +2945,7 @@ private void backtrack(int start, int n, int k) {
 
 标准全排列可以抽象成如下这棵多叉树：
 
-![](https://s3.bmp.ovh/imgs/2022/07/23/4da42c85ea2d733e.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/4da42c85ea2d733e.png)
 
 用 `used` 数组标记已经在路径上的元素避免重复选择，然后收集所有叶子节点上的值，就是所有全排列的结果：
 
@@ -3017,7 +3017,7 @@ private void backtrack(int[] nums, int k) {
 
 - [90.子集 II](BackTrack/90.子集-ii.java) &emsp;[🔗](https://leetcode.cn/problems/subsets-ii/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/23/e761472cf7458b59.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/e761472cf7458b59.png)
 
 刚才的标准子集问题输入的 `nums` 是没有重复元素的，但这题存在重复元素。
 
@@ -3025,11 +3025,11 @@ private void backtrack(int[] nums, int k) {
 
 按照之前的思路画出子集的树形结构。显然，两条值相同的相邻树枝会产生重复：
 
-![](https://s3.bmp.ovh/imgs/2022/07/23/fdcd67a12cc27279.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/fdcd67a12cc27279.png)
 
 所以需要进行剪枝，如果一个节点有多条值相同的树枝相邻则只遍历第一条，剩下的都剪掉不遍历：
 
-![jXaxc8.png](https://s1.ax1x.com/2022/07/23/jXaxc8.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/jXaxc8.png)
 
 体现在代码上，需要先进行排序，让相同的元素靠在一起，如果发现 `nums[i] == nums[i-1]`，则跳过：
 
@@ -3066,7 +3066,7 @@ private void backtrack(int[] nums, int start) {
 
 - [40.组合总和 II](BackTrack/40.组合总和-ii.java) &emsp;[🔗](https://leetcode.cn/problems/combination-sum-ii/)
 
-[![jXdejU.png](https://s1.ax1x.com/2022/07/23/jXdejU.png)](https://imgtu.com/i/jXdejU)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/jXdejU.png)
 
 这其实换个问法就变成子集问题了：请计算 `candidates` 中所有和为 `target` 的子集。
 
@@ -3124,7 +3124,7 @@ private void backtrack(int[] nums, int start, int target) {
 
 - [47.全排列 II](BackTrack/47.全排列-ii.java) &emsp;[🔗](https://leetcode.cn/problems/permutations-ii/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/23/2a1c7655c0545335.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/2a1c7655c0545335.png)
 
 [#46](BackTrack/46.全排列.java) 是标准的排列问题，而本题的输入元素存在重复的情况。
 
@@ -3224,7 +3224,7 @@ if (i > 0 && nums[i] == nums[i - 1] && !used[i - 1]) {
 
 - [39.组合总和](BackTrack/39.组合总和.java) &emsp;[🔗](https://leetcode.cn/problems/combination-sum/)
 
-[![jXDmGR.png](https://s1.ax1x.com/2022/07/23/jXDmGR.png)](https://imgtu.com/i/jXDmGR)
+![jXDmGR.png](https://s1.ax1x.com/2022/07/23/jXDmGR.png)
 
 这题实际上也是子集问题：`candidates` 的哪些子集的和为 `target`。
 
@@ -3262,7 +3262,7 @@ void backtrack(int[] nums, int start) {
 
 这相当于给之前的回溯树添加了一条树枝，在遍历这棵树的过程中，一个元素可以被无限次使用：
 
-[![jXDzwD.png](https://s1.ax1x.com/2022/07/23/jXDzwD.png)](https://imgtu.com/i/jXDzwD)
+![jXDzwD.png](https://s1.ax1x.com/2022/07/23/jXDzwD.png)
 
 当然，这样这棵回溯树会永远生长下去，所以递归函数需要设置合适的 base case 以结束算法，即路径和大于 `target` 时就不用再遍历下去了：
 
@@ -3606,7 +3606,7 @@ boolean isValid(char[][] board, int r, int c, char n) {
 
 - [22.括号生成](BackTrack/22.括号生成.java) &emsp;[🔗](https://leetcode.cn/problems/generate-parentheses/)
 
-[![jvolmF.png](https://s1.ax1x.com/2022/07/25/jvolmF.png)](https://imgtu.com/i/jvolmF)
+![jvolmF.png](https://s1.ax1x.com/2022/07/25/jvolmF.png)
 
 有关括号问题的性质：
 
@@ -4178,7 +4178,7 @@ boolean[][] matrix;
 
 由于有向图的边有方向，所以有向图中每个节点「度」被细分为入度（indegree）和出度（outdegree），如下图：
 
-![](https://s3.bmp.ovh/imgs/2022/07/16/ce98179a2c5048b1.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/ce98179a2c5048b1.png)
 
 其中节点 `3` 的入度为 3（有三条边指向它），出度为 1（它有 1 条边指向别的节点）。
 
@@ -4869,7 +4869,7 @@ class UF {
 
 再调用 `union(1, 2)`，这时 0, 1, 2 都被连通，调用 `connected(0, 2)` 也会返回 `true`，连通分量变为 8 个。
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/c0dc0dfc657d0867.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/c0dc0dfc657d0867.png)
 
 判断这种「等价关系」非常实用，如编译器判断同一个变量的不同引用、社交网络中的朋友圈计算等。
 
@@ -4881,7 +4881,7 @@ class UF {
 
 设定树的每个节点有一个指针指向其父节点，如果是根节点的话，这个指针指向自己。如上图一开始的时候没有相互连通：
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/a63c386fe86d030e.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/a63c386fe86d030e.png)
 
 ```java
 class UF {
@@ -4905,7 +4905,7 @@ class UF {
 
 **如果某两个节点被连通，则让其中的（任意）一个节点的根节点接到另一个节点的根节点上：**
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/e4470285be9e73a5.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/e4470285be9e73a5.png)
 
 ```java
 public void union(int p, int q) {
@@ -4937,7 +4937,7 @@ public int count() {
 
 这样，如果节点 `p` 和 `q` 连通的话，它们一定拥有相同的根节点：
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/623924a23a7430b2.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/623924a23a7430b2.png)
 
 ```Java
 public boolean connected(int p, int q) {
@@ -4975,7 +4975,7 @@ public void union(int p, int q) {
 
 这里直接把 `p` 所在的树接到 `q` 所在的树的根节点下面，就可能出现「头重脚轻」的不平衡状况，比如下面这种局面：
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/ce502110e6817313.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/ce502110e6817313.png)
 
 长此以往，树可能生长得很不平衡。我们希望小一些的树接到大一些的树下面，这样就能避免头重脚轻，更平衡一些。解决方法是额外使用一个 `size` 数组，记录每棵树包含的节点数，不妨称为「重量」：
 
@@ -5034,7 +5034,7 @@ public void union(int p, int q) {
 
 因为无论树长什么样，树上的每个节点的根节点都是相同的，所以可以进一步压缩每棵树的高度，使树高始终保持为常数。
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/6d93bfc2a8d5292c.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/6d93bfc2a8d5292c.png)
 
 这样每个节点的父节点就是整棵树的根节点，`find` 就能以 $O(1)$ 的时间找到某一节点的根节点。相应的，`connected` 和 `union` 复杂度都下降为 $O(1)$。
 
@@ -5086,7 +5086,7 @@ public int find(int x) {
 }
 ```
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/0e8193deed942bfd.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/0e8193deed942bfd.png)
 
 比起第一种路径压缩，显然这种方法压缩得更彻底，直接把一整条树枝压平。就算一些极端情况下产生了一棵比较高的树，只要一次路径压缩就能大幅降低树高，从摊还分析的角度来看，所有操作的平均时间复杂度依然是 $O(1)$。
 
@@ -5158,7 +5158,7 @@ Union-Find 算法的复杂度的分析：构造函数初始化数据结构需要
 
 - [323.无向图中连通分量的数目](Graph/323.无向图中连通分量的数目.java) &emsp;[🔗](https://leetcode.cn/problems/number-of-connected-components-in-an-undirected-graph/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/b74a073b1f32239f.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/b74a073b1f32239f.png)
 
 可以直接使用 UF 类来解决：
 
@@ -5194,7 +5194,7 @@ class UF {
 
 把所有靠边的 `O` 和一个虚拟节点 `dummy` 进行连通：
 
-![](https://s3.bmp.ovh/imgs/2022/07/17/55715f2b73aa74f7.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/55715f2b73aa74f7.png)
 
 首先要解决的是，根据我们的实现，Union-Find 底层用的是一维数组，构造函数需要传入这个数组的大小，而题目给的是一个二维棋盘。
 
@@ -5305,7 +5305,7 @@ class UF {
 
 一幅图可以有多种不同的生成树，如下图红色边就组成了两棵不同的生成树：
 
-![](https://s3.bmp.ovh/imgs/2022/07/18/18535749842df6e7.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/18535749842df6e7.png)
 
 对于加权图，每条边都有权重，所以每棵生成树都有一个权重和。如上图，右侧生成树的权重和比左侧生成树的权重和小。
 
@@ -8859,7 +8859,7 @@ class TrieSet {
 
 - [208.实现Trie(前缀树)](DS/208.实现-trie-前缀树.java) &emsp;[🔗](https://leetcode.cn/problems/implement-trie-prefix-tree/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/21/40e71b8a0943206f.png)
+<img src="https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015654665.png" alt="image-20220823015654665" style="zoom:50%;" />
 
 题目让实现的几个函数就是 `TrieSet` 的部分 API，所以封装一个 `TrieSet` 就能解决这道题了：
 
@@ -8893,7 +8893,7 @@ class TrieMap { /* 见上文 */ }
 
 - [648.单词替换](DS/648.单词替换.java) &emsp;[🔗](https://leetcode.cn/problems/replace-words/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/21/45426aae419cc007.png)
+![image-20220823015718906](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015718906.png)
 
 可以把输入的词根列表 `dict` 存入 `TrieSet`，然后直接复用实现的 `shortestPrefixOf` 函数：
 
@@ -8936,7 +8936,7 @@ class TrieMap { /* 见上文 */ }
 
 - [211.添加与搜索单词](DS/211.添加与搜索单词-数据结构设计.java) &emsp;[🔗](https://leetcode.cn/problems/design-add-and-search-words-data-structure/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/21/13a39f5626b8b74f.png)
+![image-20220823015737241](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015737241.png)
 
 考点在于 `search` 函数进行通配符匹配，其实就是给 `TrieSet` 实现的 `hasKeyWithPattern` 方法：
 
@@ -8966,7 +8966,7 @@ class TrieMap { /* 见上文 */ }
 
 - [1804.实现Trie(前缀树) II](DS/1804.实现-trie-（前缀树）-ii.java) &emsp;[🔗](https://leetcode.cn/problems/implement-trie-ii-prefix-tree/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/21/c0b6621db903d1c8.png)
+![image-20220823015757758](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015757758.png)
 
 这题就可以用到 `TrieMap`，每个插入的 `word` 就是键，插入的次数就是对应的值，然后复用 `TrieMap` 的 API 就能实现题目要求的这些函数：
 
@@ -9020,7 +9020,7 @@ class TrieMap { /* 见上文 */ }
 
 - [677.键值映射](DS/677.键值映射.java) &emsp;[🔗](https://leetcode.cn/problems/map-sum-pairs/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/21/7432871a0c5dc392.png)
+![image-20220823015816985](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015816985.png)
 
 ```java
 class MapSum {
@@ -9064,7 +9064,7 @@ class TrieMap { /* 见上文 */ }
 
 这个问题可以抽象思考：把数组的元素想象成并列站立的人，元素大小想象成人的身高。这些人面对站成一列，如何求元素「2」的下一个更大元素？如果能够看到元素「2」，那么他后面可见的第一个人就是「2」的下一个更大元素，因为比「2」小的元素身高不够，都被「2」挡住了，第一个露出来的就是答案。
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/6152a56df1837b8e.png)
+![image-20220823015833412](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015833412.png)
 
 代码：
 
@@ -9096,7 +9096,7 @@ int[] nextGreaterElement(int[] nums) {
 
 - [496.下一个更大元素 I](DS/496.下一个更大元素-i.java) &emsp;[🔗](https://leetcode.cn/problems/next-greater-element-i/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/ed461f444ea0ada1.png)
+![image-20220823015847839](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015847839.png)
 
 题目说 `nums1` 是 `nums2` 的子集，那么先把 `nums2` 中每个元素的下一个更大元素算出来存到一个映射里，然后再让 `nums1` 中的元素去查表即可：
 
@@ -9132,7 +9132,7 @@ public int[] nextGreaterElement(int[] nums) {
 
 - [739.每日温度](DS/739.每日温度.java) &emsp;[🔗](https://leetcode.cn/problems/daily-temperatures/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/608e329dffe43942.png)
+![image-20220823015905295](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015905295.png)
 
 这里让求的是当前元素距离下一个更大元素的索引距离，对模版进行修改即可：
 
@@ -9161,7 +9161,7 @@ public int[] dailyTemperatures(int[] temperatures) {
 
 - [503.下一个更大元素 II](DS/503.下一个更大元素-ii.java) &emsp;[🔗](https://leetcode.cn/problems/next-greater-element-ii/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/2f04aa61fc3195cd.png)
+![image-20220823015925373](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015925373.png)
 
 输入一个「环形数组」，计算其中每个元素的下一个更大元素。比如输入 `[2,1,2,4,3]`，应该返回 `[4,2,4,-1,4]`，因为拥有了环形属性，最后一个元素 3 绕了一圈后找到了比自己大的元素 4。
 
@@ -9179,7 +9179,7 @@ while (true) {
 
 如输入是 [2,1,2,4,3]，对于最后一个元素 3，如何找到元素 4 作为下一个更大元素。对于这种需求，常用套路就是将数组长度翻倍：
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/322a026beeb1b1a5.png)
+![image-20220823015943267](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823015943267.png)
 
 这样，元素 3 就可以找到元素 4 作为下一个更大元素了，而且其他的元素都可以被正确地计算。
 
@@ -9489,7 +9489,7 @@ class MonotonicQueue<E extends Comparable<E>> {
 
 - [1438.绝对差不超过限制的最长连续子数组](DS/1438.绝对差不超过限制的最长连续子数组.java) &emsp;[🔗](https://leetcode.cn/problems/longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/29c7723979b5b7c7.png)
+![image-20220823020003706](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220823020003706.png)
 
 当窗口内绝对值之差不超过 `limit` 时扩大窗口，当新加入窗口的元素使得绝对值之差超过 `limit` 时开始收缩窗口，窗口的最大宽度即最长子数组的长度。
 
@@ -9529,7 +9529,7 @@ class MonotonicQueue<E extends Comparable<E>> {}
 
 - [862.和至少为 K 的最短子数组](DS/862.和至少为-k-的最短子数组.java) &emsp;[🔗](https://leetcode.cn/problems/shortest-subarray-with-sum-at-least-k/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/c64233346d1b8635.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/c64233346d1b8635.png)
 
 这题难点在于同时结合了「滑动窗口算法」、「前缀和技巧」和「单调队列」几个知识点。首先，想要快速记录子数组的和，需要「前缀和技巧」预计算一个 `preSum` 数组，然后在这个 `preSum` 数组上施展「滑动窗口算法」寻找一个差值大于 `k` 且宽度最小的「窗口」，这个窗口的大小就是题目想要的结果。当滑动窗口扩大时，新进入窗口的元素 `preSum[right]` 需要知道窗口中最小的那个元素是多少，和最小的那个元素相减才能得到尽可能大的子数组和。快速判断窗口中的最值就需要单调队列结构：
 
@@ -9579,7 +9579,7 @@ class MonotonicQueue<E extends Comparable<E>> {}
 
 - [918.环形子数组的最大和](DS/918.环形子数组的最大和.java) &emsp;[🔗](https://leetcode.cn/problems/maximum-sum-circular-subarray/)
 
-![](https://s3.bmp.ovh/imgs/2022/07/22/3199a4c175888538.png)
+![](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/3199a4c175888538.png)
 
 把 `nums` 数组扩大一倍，计算前缀和数组` preSum`，借助一个定长为 `nums.length` 的单调队列来计算环形数组中的最大子数组和：
 
