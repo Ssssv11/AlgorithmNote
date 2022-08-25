@@ -35,6 +35,9 @@ class Node {
  */
 class Solution {
     public Node connect(Node root) {
+        if(root == null) {
+            return null;
+        }
         // 遍历「三叉树」，连接相邻节点
         traverse(root.left, root.right);
         return root;
