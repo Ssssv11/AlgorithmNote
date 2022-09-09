@@ -20,14 +20,12 @@ class Solution {
                 default:
                     res++;
             }
-
             // if(logs[i].equals("./")) {
                 
             // } else if(logs[i].equals("../")) {
-            //     res = res >= 1 ? res-1 : res;
-            //     // if(res >= 1) {
-            //     //     res--;
-            //     // }
+            //     if(res >= 1) {
+            //         res--;
+            //     }
             // } else {
             //     res++;
             // }
