@@ -10,25 +10,15 @@ class Solution {
     public int minOperations(String[] logs) {
         int res = 0;
         for (int i = 0; i < logs.length; i++) {
-            String log = logs[i];
-            switch (log) {
-                case "./":
-                    break;
-                case "../":
-                    res = res >= 1 ? res - 1 : res;
-                    break;
-                default:
-                    res++;
-            }
-            // if(logs[i].equals("./")) {
+            if(logs[i].equals("./")) {
                 
-            // } else if(logs[i].equals("../")) {
-            //     if(res >= 1) {
-            //         res--;
-            //     }
-            // } else {
-            //     res++;
-            // }
+            } else if(logs[i].equals("../")) {
+                if(res >= 1) {
+                    res--;
+                }
+            } else {
+                res++;
+            }
         }
         return res;
     }
