@@ -1997,7 +1997,7 @@ void traverse(TreeNode root) {
 
 快速排序的核心就是 `partition` 函数， `partition` 函数的作用是在 `nums[lo..hi]` 中寻找一个分界点 `p`，通过交换元素使得 `nums[lo..p-1]` 都小于等于 `nums[p]`，且 `nums[p+1..hi]` 都大于 `nums[p]`：
 
-![快速排序1](https://files.catbox.moe/po3nwl.png)
+![快速排序1](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220910231048466.png)
 
 通过 `partition` 就可以将 `nums[p]` 放在正确的位置。再用同样的方法把 `p` 左边和右边的子数组进行递归用 `partition` 把剩下的元素也排好序。
 
@@ -2005,7 +2005,7 @@ void traverse(TreeNode root) {
 
 这样，根据每次排序的元素的顺序，快速排序最后形成的二叉树就是一颗二叉搜索树：
 
-![快速排序2](https://files.catbox.moe/gcezr2.png)
+![快速排序2](https://ssssv-1311247406.cos.ap-chengdu.myqcloud.com/blog/image-20220910230823307.png)
 
 但这样就需要考虑二叉搜索树不平衡的问题，在极端情况下会退化成链表，导致操作效率大幅降低。为了避免这种情况，需要引入随机性。常见的方式是在进行排序之前对整个数组执行 「洗牌算法」 进行打乱，或者在 `partition` 函数中随机选择数组元素作为分界点。
 
